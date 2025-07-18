@@ -4,74 +4,84 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Hộ Kinh Doanh</title>
-  
-  <!-- CSS Libraries -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  
-  <!-- Main CSS -->
-<!-- Trong file index.html -->
-<link rel="stylesheet" href="styles.css"> 
-</head>
-<body>
-  <header class="app-header">
-    <button class="mobile-toggle btn" onclick="toggleSidebarMobile()">☰ HKD</button>
-    <div class="header-actions">
-      <button class="btn btn-primary" onclick="document.getElementById('zipFile').click()">📁 Chọn file</button>
-      <input type="file" id="zipFile" class="file-input" accept=".zip" multiple>
-      <button class="btn btn-danger" onclick="clearAll()">🗑️ Xoá toàn bộ</button>
-      <button class="btn btn-secondary" onclick="showLogHistory()">📝 Xem lỗi</button>
-      <button class="btn btn-secondary" onclick="undoAction()">🔁 Undo</button>
-      <button class="btn btn-primary" onclick="searchHKD()">🔍 Tìm kiếm</button>
-    </div>
-    <div class="github-section">
-      <input id="tokenInput" class="token-input" placeholder="GitHub token">
-      <button class="btn btn-secondary" onclick="saveGitHubToken()">💾 Lưu token</button>
-      <button class="btn btn-danger" onclick="gitbu()">🗑️ Xóa GitHub</button>
-    </div>
-  </header>
 
-  <div class="app-container">
-    <aside class="app-sidebar mobile-hidden" id="hkdList">
-      <h3 class="sidebar-title">📋 Danh sách HKD</h3>
-      <ul class="business-list" id="businessList"></ul>
-    </aside>
+  <!-- ✅ CSS -->
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
 
-    <main class="app-main">
-      <div id="mainContent">
-        <div class="empty-state" id="hkdInfo">
-          <div class="empty-icon">📌</div>
-          <p>Chưa chọn HKD nào</p>
-        </div>
-        
-        <!-- Tab System Container -->
-        <div class="tabs-container" id="tabsContainer" style="display: none;">
-          <div class="tabs-nav">
-            <button class="tab-btn active" data-tab="tonkho">📦 Tồn kho</button>
-            <button class="tab-btn" data-tab="hoadon">📥 Hóa đơn</button>
-            <button class="tab-btn" data-tab="xuathang">📤 Xuất hàng</button>
-          </div>
-          
-          <div class="tab-content active" id="tonkhoTab">
-            <!-- Nội dung tab tồn kho -->
-          </div>
-          
-          <div class="tab-content" id="hoadonTab">
-            <!-- Nội dung tab hóa đơn -->
-          </div>
-          
-          <div class="tab-content" id="xuathangTab">
-            <!-- Nội dung tab xuất hàng -->
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-
-  <!-- JS Libraries -->
+  <!-- ✅ JS thư viện -->
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+<body>
+
+  <!-- ==== HEADER ==== -->
+  <header>
+    <button onclick="toggleSidebarMobile()" class="mobile-only">☰ HKD</button>
+    <button onclick="document.getElementById('zipFile').click()">📁 Chọn file</button>
+    <input type="file" id="zipFile" accept=".zip" multiple style="display:none;">
+    <button onclick="clearAll()">🗑️ Xoá toàn bộ</button>
+    <button onclick="showLogHistory()">📝 Xem lỗi gần đây</button>
+    <button onclick="undoAction()">🔁 Undo</button>
+    <button onclick="searchHKD()">🔍 Tìm kiếm</button>
+    <button onclick="showGitHubTokenPopup()">🔐 Nhập GitHub Token</button>
+    <input id="tokenInput" placeholder="Nhập GitHub token..." />
+    <button onclick="localStorage.setItem('github_token', document.getElementById('tokenInput').value)">
+      💾 Lưu token
+    </button>
+    <button onclick="gitbu()" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+      🗑️ Xóa tất cả file trên GitHub
+    </button>
+  </header>
+
+  <!-- ==== BODY CONTENT ==== -->
+  <div class="container">
+    <!-- === SIDEBAR === -->
+    <div class="sidebar hide-on-mobile" id="hkdList">
+      <h3>📋 Danh sách HKD</h3>
+      <ul id="businessList"></ul>
+    </div>
+
+    <!-- === MAIN === -->
+    <div class="main">
+      <div id="mainContent">
+        <div id="hkdInfo">📌 Chưa chọn HKD nào</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==== SCRIPT CHẠY SAU ==== -->
+  <script>
+    document.getElementById('zipFile').addEventListener('change', async function (e) {
+      const files = Array.from(e.target.files);
+      if (files.length > 0) await handleFiles(files);
+    });
+
+    document.addEventListener('click', function(e) {
+      if (e.target.closest('#businessList li')) {
+        if (window.innerWidth < 768) {
+          toggleSidebarMobile(true);
+        }
+      }
+    });
+
+    function toggleSidebarMobile(forceClose = false) {
+      const sidebar = document.getElementById('hkdList');
+      if (forceClose || sidebar.classList.contains('show-on-mobile')) {
+        sidebar.classList.remove('show-on-mobile');
+        sidebar.classList.add('hide-on-mobile');
+      } else {
+        sidebar.classList.remove('hide-on-mobile');
+        sidebar.classList.add('show-on-mobile');
+      }
+    }
+
+    if (window.innerWidth < 768) {
+      document.body.classList.add('compact-mode');
+    }
+  </script>
 
   <!-- ==== JS MODULES ==== -->
   <script src="state.js"></script>
@@ -79,8 +89,8 @@
   <script src="parseXmlInvoice.js"></script>
   <script src="modules/inventory.js"></script>
   <script src="modules/export.js"></script>
-<script src="modules/invoiceTab.js"></script>
-<script src="modules/exportGoodsTab.js"></script>
+  <script src="modules/invoiceTab.js"></script>
+  <script src="modules/exportGoodsTab.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
