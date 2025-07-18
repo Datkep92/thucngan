@@ -1,4 +1,41 @@
+function renderTonKhoTab(taxCode, type) {
+  // Kiểm tra và khởi tạo dữ liệu nếu cần
+  if (!hkdData[taxCode]) {
+    hkdData[taxCode] = {
+      tonkhoMain: [],
+      tonkhoKM: [],
+      tonkhoCK: [],
+      invoices: [],
+      exports: []
+    };
+  }
+
+  const map = { main: 'tonkhoMain', km: 'tonkhoKM', ck: 'tonkhoCK' };
+  const divMap = { main: 'tonKho-main', km: 'tonKho-km', ck: 'tonKho-ck' };
+  const spanMap = { main: 'total-tonkho-main', km: 'total-tonkho-km', ck: 'total-tonkho-ck' };
+
+  // Đảm bảo các mảng tồn tại
+  hkdData[taxCode][map.main] = hkdData[taxCode][map.main] || [];
+  hkdData[taxCode][map.km] = hkdData[taxCode][map.km] || [];
+  hkdData[taxCode][map.ck] = hkdData[taxCode][map.ck] || [];
+
+  // Lọc và tính toán dữ liệu
+  let arr = (hkdData[taxCode][map[type]] || []).filter(item => {
+    if (type === 'main') return item.category === 'hang_hoa';
+    if (type === 'km') return item.category === 'KM';
+    if (type === 'ck') return item.category === 'chiet_khau';
+    return true;
+  });
+
+  // ... phần còn lại của hàm giữ nguyên
+}
+
 function switchTonKhoTab(tab) {
+  if (!currentTaxCode) {
+    showToast("Vui lòng chọn một HKD trước", 2000, 'error');
+    return;
+  }
+
   const tabs = ['main', 'km', 'ck'];
   tabs.forEach(t => {
     const div = document.getElementById(`tonKho-${t}`);
@@ -6,17 +43,29 @@ function switchTonKhoTab(tab) {
   });
 
   renderTonKhoTab(currentTaxCode, tab);
-  updateMainTotalDisplay(currentTaxCode); // ✅ dùng biến toàn cục đã có
-  //renderHKDTab(taxCode); // ✅ gọi lại toàn bộ tab
-
+  updateMainTotalDisplay(currentTaxCode);
 }
 
-
-// Render tab tồn kho (phiên bản tối ưu)
 function renderTonKhoTab(taxCode, type) {
+  // Kiểm tra và khởi tạo dữ liệu nếu cần
+  if (!hkdData[taxCode]) {
+    hkdData[taxCode] = {
+      tonkhoMain: [],
+      tonkhoKM: [],
+      tonkhoCK: [],
+      invoices: [],
+      exports: []
+    };
+  }
+
   const map = { main: 'tonkhoMain', km: 'tonkhoKM', ck: 'tonkhoCK' };
   const divMap = { main: 'tonKho-main', km: 'tonKho-km', ck: 'tonKho-ck' };
   const spanMap = { main: 'total-tonkho-main', km: 'total-tonkho-km', ck: 'total-tonkho-ck' };
+
+  // Đảm bảo các mảng tồn tại
+  hkdData[taxCode][map.main] = hkdData[taxCode][map.main] || [];
+  hkdData[taxCode][map.km] = hkdData[taxCode][map.km] || [];
+  hkdData[taxCode][map.ck] = hkdData[taxCode][map.ck] || [];
 
   // Lọc và tính toán dữ liệu
   let arr = (hkdData[taxCode][map[type]] || []).filter(item => {

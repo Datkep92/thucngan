@@ -36,9 +36,12 @@ function openExportPopup(taxCode) {
   document.getElementById("exportPopup").style.display = 'block';
 }
 
+// Gắn hàm vào window để sử dụng toàn cục
+window.renderExportGoodsTab = renderExportGoodsTab;
 // Đóng popup xuất Excel
 function closeExportPopup() {
   document.getElementById("exportPopup").style.display = 'none';
+  if (currentTaxCode) clearTempExportData(currentTaxCode);
 }
 
 // Tải file Excel tồn kho
