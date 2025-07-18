@@ -107,56 +107,69 @@ function renderHKDTab(taxCode) {
   const filteredInvoices = hkd.invoices || [];
   const filteredExports = hkd.exports || [];
 
-  let totalInvoiceAmount = 0;
-  let totalInvoiceTax = 0;
-  let totalInvoiceFee = 0;
-  let totalInvoiceDiscount = 0;
+  let totalInvoiceAmount = 0;      // Tổng tiền chưa thuế
+let totalInvoiceTax = 0;         // Tổng thuế GTGT
+let totalInvoiceFee = 0;
+let totalInvoiceDiscount = 0;
 
-  for (const inv of filteredInvoices) {
-    totalInvoiceAmount += inv.totalBeforeTax || 0;
-    totalInvoiceTax += inv.totalTax || 0;
-    totalInvoiceFee += inv.totalFee || 0;
-    totalInvoiceDiscount += inv.discount || 0;
-  }
+for (const inv of filteredInvoices) {
+  const products = inv.products || [];
 
-  const totalExportRevenue = filteredExports.reduce((sum, ex) => sum + (ex.total || 0), 0);
+  for (const p of products) {
+    const amount = parseFloat(p.amount || 0);
+    const taxRate = parseFloat((p.taxRate || '').replace('%', '')) || 0;
+    const tax = (amount * taxRate) / 100;
 
-  // Tổng tồn kho thực tế (Hàng - Chiết khấu)
-  const totalHang = hkd.tonkhoMain.reduce((s, i) => s + (i.amount || 0), 0);
-  const totalCK = hkd.tonkhoCK.reduce((s, i) => s + (i.amount || 0), 0);
-  const totalAmountMain = totalHang - Math.abs(totalCK);
-
-  // Tính tổng giá vốn từ các đơn đã xuất (dựa theo giá nhập lưu trong priceInput)
-  let totalCost = 0;
-  for (const ex of filteredExports) {
-    for (const line of ex.items || []) {
-      const cost = (parseFloat(line.priceInput) || 0) * (parseFloat(line.qty) || 0);
-      totalCost += cost;
+    if (p.category === 'chiet_khau') {
+      totalInvoiceDiscount += Math.abs(amount); // Chiết khấu âm → dương
+    } else {
+      totalInvoiceAmount += amount;
+      totalInvoiceTax += tax;
     }
   }
 
-  const totalProfit = totalExportRevenue - totalCost;
+  totalInvoiceFee += parseFloat(inv.totalFee || 0);
+}
 
-  const mainContent = document.getElementById('mainContent');
-  if (!mainContent) return;
+const totalExportRevenue = filteredExports.reduce((sum, ex) => sum + (ex.total || 0), 0);
 
-  mainContent.innerHTML = `
-    <h2 style="font-size:25px; font-weight:bold; color:red; margin:10px 0;">🧾 ${name}</h2>
-    <div style="margin-bottom:12px;">
-      📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn, ${filteredExports.length} lần xuất hàng
-    </div>
+// Tổng tồn kho chính - chiết khấu
+const totalHang = hkd.tonkhoMain.reduce((s, i) => s + (i.amount || 0), 0);
+const totalCK = hkd.tonkhoCK.reduce((s, i) => s + (i.amount || 0), 0);
+const totalAmountMain = totalHang - Math.abs(totalCK);
 
-    <div class="hkd-summary-grid hkd-section">
-      <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
-      <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
-      <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
-      <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
-      <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
-      <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
-      <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại</div><div class="value">${formatCurrency(totalAmountMain)}</div></div>
-    </div>
+// Tính giá vốn từ xuất hàng (dựa theo priceInput)
+let totalCost = 0;
+for (const ex of filteredExports) {
+  for (const line of ex.items || []) {
+    const cost = (parseFloat(line.priceInput) || 0) * (parseFloat(line.qty) || 0);
+    totalCost += cost;
+  }
+}
+
+const totalProfit = totalExportRevenue - totalCost;
+
+// Hiển thị ra giao diện
+const mainContent = document.getElementById('mainContent');
+if (!mainContent) return;
+
+mainContent.innerHTML = `
+  <h2 style="font-size:25px; font-weight:bold; color:red; margin:10px 0;">🧾 ${name}</h2>
+  <div style="margin-bottom:12px;">
+    📅 Đang lọc từ <b>${f}</b> đến <b>${t}</b>: ${filteredInvoices.length} hóa đơn, ${filteredExports.length} lần xuất hàng
+  </div>
+
+  <div class="hkd-summary-grid hkd-section">
+    <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
+    <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
+    <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
+    <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
+    <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
+    <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
+    <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
+    <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
+    <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại</div><div class="value">${formatCurrency(totalAmountMain)}</div></div>
+  </div>
 
     <div class="tabs">
       <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
