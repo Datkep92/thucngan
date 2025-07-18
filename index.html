@@ -54,13 +54,11 @@
 
   <!-- ==== SCRIPT CHẠY SAU ==== -->
   <script>
-    // Khi chọn file ZIP
     document.getElementById('zipFile').addEventListener('change', async function (e) {
       const files = Array.from(e.target.files);
       if (files.length > 0) await handleFiles(files);
     });
 
-    // Đóng sidebar trên mobile khi chọn HKD
     document.addEventListener('click', function(e) {
       if (e.target.closest('#businessList li')) {
         if (window.innerWidth < 768) {
@@ -69,7 +67,6 @@
       }
     });
 
-    // Toggle sidebar
     function toggleSidebarMobile(forceClose = false) {
       const sidebar = document.getElementById('hkdList');
       if (forceClose || sidebar.classList.contains('show-on-mobile')) {
@@ -81,7 +78,6 @@
       }
     }
 
-    // Kích hoạt compact mode nếu mobile
     if (window.innerWidth < 768) {
       document.body.classList.add('compact-mode');
     }
@@ -93,8 +89,8 @@
   <script src="parseXmlInvoice.js"></script>
   <script src="modules/inventory.js"></script>
   <script src="modules/export.js"></script>
-<script src="modules/invoiceTab.js"></script>
-<script src="modules/exportGoodsTab.js"></script>
+  <script src="modules/invoiceTab.js"></script>
+  <script src="modules/exportGoodsTab.js"></script>
   <script src="main.js"></script>
 </body>
 </html>
