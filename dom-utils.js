@@ -33,6 +33,27 @@ function showToast(message, duration = 3000, type = 'info') {
   }, duration);
 }
 
+
+function showPopup(content, title = '', onClose = null) {
+  const existingPopup = document.getElementById('app-popup');
+  if (existingPopup) existingPopup.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'app-popup';
+  popup.innerHTML = `
+    <div class="popup-overlay" onclick="closePopup()"></div>
+    <div class="popup-content">
+      ${title ? `<div class="popup-header"><strong>${title}</strong><button onclick="closePopup()">✖️</button></div>` : ''}
+      <div class="popup-body">${content}</div>
+    </div>
+  `;
+  document.body.appendChild(popup);
+
+  window.closePopup = () => {
+    popup.remove();
+    if (onClose) onClose();
+  };
+}
 // Render danh sách HKD
 function renderHKDList() {
   const ul = document.getElementById('businessList');

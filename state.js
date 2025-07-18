@@ -10,7 +10,29 @@ let tonkhoEditing = { taxCode: '', type: '', index: -1 };
 let exportInventoryData = [];
 let logHistory = [];
 let undoStack = [];
+function ensureHkdData(taxCode) {
+  if (!hkdData[taxCode]) {
+    hkdData[taxCode] = {
+      name: taxCode,
+      tonkhoMain: [], // Đảm bảo tonkhoMain luôn là mảng
+      tonkhoCK: [],
+      invoices: [],
+      exports: [],
+      customers: []
+    };
+  }
+  return hkdData[taxCode];
+}
 
+function safeParseInt(value, defaultValue = 0) {
+  const parsed = parseInt(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
+
+function safeParseFloat(value, defaultValue = 0) {
+  const parsed = parseFloat(value);
+  return isNaN(parsed) ? defaultValue : parsed;
+}
 // Lưu vào localStorage
 function saveDataToLocalStorage() {
   try {
@@ -19,14 +41,15 @@ function saveDataToLocalStorage() {
     localStorage.setItem('logHistory', JSON.stringify(logHistory));
   } catch (e) {
     console.error('❌ Không thể lưu localStorage:', e);
-    toast('❌ Lỗi khi lưu dữ liệu', 'error');
+    showToast('❌ Lỗi khi lưu dữ liệu', 3000, 'error');
   }
 }
-function formatCurrencyVN(value, round = false) {
-  if (typeof value !== 'number') value = parseFloat(value) || 0;
-  if (round) value = Math.round(value / 1000) * 1000; // Làm tròn đến hàng nghìn
-  return value.toLocaleString('vi-VN', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+function formatNumber(n) {
+  return new Intl.NumberFormat('vi-VN').format(n);
 }
+
+
 
 // Load từ localStorage
 function loadDataFromLocalStorage() {
@@ -42,13 +65,9 @@ function loadDataFromLocalStorage() {
     }
   } catch (e) {
     console.error("❌ Lỗi đọc LocalStorage:", e);
-    toast("❌ Không thể đọc dữ liệu trước đó", 'error');
+    showToast("❌ Không thể đọc dữ liệu trước đó", 3000, 'error');
   }
 }
-function formatCurrency(value) {
-  return (value || 0).toLocaleString('vi-VN') + ' đ';
-}
-
 // Ghi log hành động
 function logAction(action, dataSnapshot = null) {
   const entry = {
