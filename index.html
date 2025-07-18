@@ -4,12 +4,232 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Quản lý Hộ Kinh Doanh</title>
+  
+  <!-- CSS Libraries -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css">
-  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Main CSS -->
+  <style>
+    :root {
+      --primary: #3498db;
+      --primary-dark: #2980b9;
+      --secondary: #2c3e50;
+      --danger: #e74c3c;
+      --success: #2ecc71;
+      --warning: #f39c12;
+      --light: #ecf0f1;
+      --dark: #34495e;
+      --gray: #95a5a6;
+      --border-radius: 6px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f8f9fa;
+    }
+
+    .app-container {
+      display: flex;
+      min-height: calc(100vh - 60px);
+    }
+
+    .app-header {
+      background-color: var(--secondary);
+      color: white;
+      padding: 12px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+
+    .app-sidebar {
+      width: 280px;
+      background-color: var(--secondary);
+      color: white;
+      padding: 20px;
+      transition: var(--transition);
+      overflow-y: auto;
+    }
+
+    .app-main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background-color: white;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background-color: var(--primary);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background-color: var(--gray);
+      color: white;
+    }
+
+    .btn-danger {
+      background-color: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background-color: #c0392b;
+    }
+
+    .file-input {
+      display: none;
+    }
+
+    .token-input {
+      padding: 8px 12px;
+      border-radius: var(--border-radius);
+      border: 1px solid #ddd;
+      min-width: 200px;
+    }
+
+    .business-list {
+      list-style: none;
+    }
+
+    .business-item {
+      padding: 12px 15px;
+      margin-bottom: 8px;
+      background-color: rgba(255, 255, 255, 0.1);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .business-item:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+      transform: translateX(5px);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--gray);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 768px) {
+      .app-sidebar {
+        position: fixed;
+        top: 60px;
+        left: 0;
+        bottom: 0;
+        width: 280px;
+        transform: translateX(-100%);
+        z-index: 900;
+      }
+
+      .app-sidebar.mobile-hidden {
+        transform: translateX(0);
+      }
+
+      .app-main {
+        padding: 15px;
+      }
+
+      .header-actions, .github-section {
+        display: none;
+      }
+
+      .mobile-toggle {
+        display: inline-block;
+      }
+    }
+
+    @media (min-width: 769px) {
+      .mobile-toggle {
+        display: none;
+      }
+    }
+
+    /* Tab System */
+    .tabs-container {
+      margin-top: 20px;
+    }
+    
+    .tabs-nav {
+      display: flex;
+      border-bottom: 1px solid #ddd;
+    }
+    
+    .tab-btn {
+      padding: 12px 20px;
+      background: #f1f1f1;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s;
+      border-radius: 4px 4px 0 0;
+      margin-right: 5px;
+    }
+    
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .tab-content {
+      display: none;
+      padding: 20px;
+      background: white;
+      border-radius: 0 0 4px 4px;
+      animation: fadeIn 0.3s;
+    }
+    
+    .tab-content.active {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+  </style>
 </head>
 <body>
   <header class="app-header">
-    <button class="mobile-toggle" onclick="toggleSidebarMobile()">☰ HKD</button>
+    <button class="mobile-toggle btn" onclick="toggleSidebarMobile()">☰ HKD</button>
     <div class="header-actions">
       <button class="btn btn-primary" onclick="document.getElementById('zipFile').click()">📁 Chọn file</button>
       <input type="file" id="zipFile" class="file-input" accept=".zip" multiple>
@@ -26,7 +246,7 @@
   </header>
 
   <div class="app-container">
-    <aside class="app-sidebar" id="hkdList">
+    <aside class="app-sidebar mobile-hidden" id="hkdList">
       <h3 class="sidebar-title">📋 Danh sách HKD</h3>
       <ul class="business-list" id="businessList"></ul>
     </aside>
@@ -37,42 +257,75 @@
           <div class="empty-icon">📌</div>
           <p>Chưa chọn HKD nào</p>
         </div>
+        
+        <!-- Tab System Container -->
+        <div class="tabs-container" id="tabsContainer" style="display: none;">
+          <div class="tabs-nav">
+            <button class="tab-btn active" data-tab="tonkho">📦 Tồn kho</button>
+            <button class="tab-btn" data-tab="hoadon">📥 Hóa đơn</button>
+            <button class="tab-btn" data-tab="xuathang">📤 Xuất hàng</button>
+          </div>
+          
+          <div class="tab-content active" id="tonkhoTab">
+            <!-- Nội dung tab tồn kho -->
+          </div>
+          
+          <div class="tab-content" id="hoadonTab">
+            <!-- Nội dung tab hóa đơn -->
+          </div>
+          
+          <div class="tab-content" id="xuathangTab">
+            <!-- Nội dung tab xuất hàng -->
+          </div>
+        </div>
       </div>
     </main>
   </div>
 
-  <!-- Các thư viện JS -->
+  <!-- JS Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-  <!-- Các file JS của ứng dụng -->
-  <script src="state.js"></script>
-  <script src="dom-utils.js"></script>
-  <script src="parseXmlInvoice.js"></script>
-  <script src="modules/inventory.js"></script>
-  <script src="modules/export.js"></script>
-  <script src="modules/invoiceTab.js"></script>
-  <script src="modules/exportGoodsTab.js"></script>
-  <script src="main.js"></script>
-
+  <!-- App JS -->
   <script>
-    // Xử lý sự kiện cơ bản
-    document.getElementById('zipFile').addEventListener('change', async function(e) {
-      const files = Array.from(e.target.files);
-      if (files.length > 0) await handleFiles(files);
-    });
-
-    function toggleSidebarMobile(forceClose = false) {
-      const sidebar = document.getElementById('hkdList');
-      sidebar.classList.toggle('mobile-hidden', !forceClose && !sidebar.classList.contains('mobile-hidden'));
+    // Tab System Functionality
+    function setupTabs() {
+      const tabBtns = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      
+      tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          // Remove active class from all buttons and contents
+          tabBtns.forEach(b => b.classList.remove('active'));
+          tabContents.forEach(c => c.classList.remove('active'));
+          
+          // Add active class to clicked button and corresponding content
+          btn.classList.add('active');
+          const tabId = btn.getAttribute('data-tab');
+          document.getElementById(`${tabId}Tab`).classList.add('active');
+        });
+      });
     }
-
+    
+    // Sidebar Toggle
+    function toggleSidebarMobile() {
+      const sidebar = document.getElementById('hkdList');
+      sidebar.classList.toggle('mobile-hidden');
+    }
+    
+    // Save GitHub Token
     function saveGitHubToken() {
-      localStorage.setItem('github_token', document.getElementById('tokenInput').value);
+      const token = document.getElementById('tokenInput').value;
+      localStorage.setItem('github_token', token);
+      showToast('Đã lưu token GitHub');
+    }
+    
+    // Show Toast Notification
+    function showToast(message) {
       Toastify({
-        text: "Đã lưu token",
+        text: message,
         duration: 3000,
         close: true,
         gravity: "top",
@@ -80,11 +333,25 @@
         backgroundColor: "#4CAF50",
       }).showToast();
     }
-
-    if (window.innerWidth < 768) {
-      document.body.classList.add('mobile-view');
-      document.getElementById('hkdList').classList.add('mobile-hidden');
-    }
+    
+    // Initialize the app
+    document.addEventListener('DOMContentLoaded', () => {
+      setupTabs();
+      
+      // Set mobile view if needed
+      if (window.innerWidth < 768) {
+        document.body.classList.add('mobile-view');
+      }
+      
+      // File input handler
+      document.getElementById('zipFile').addEventListener('change', async function(e) {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) {
+          // Handle file processing here
+          showToast(`Đã chọn ${files.length} file`);
+        }
+      });
+    });
   </script>
 </body>
 </html>
