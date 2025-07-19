@@ -175,16 +175,41 @@ function renderHKDTab(taxCode) {
     </div>
 
     <div class="hkd-summary-grid hkd-section">
-      <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
-      <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
-      <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
-      <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
-      <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
-      <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
-      <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại</div><div class="value">${formatCurrency(totalAmountMain)}</div></div>
-    </div>
+      <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div>
+    <div class="value" id="${taxCode}-invoice-count">${filteredInvoices.length}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div>
+    <div class="value" id="${taxCode}-summary-total">${formatCurrency(totalInvoiceAmount)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div>
+    <div class="value" id="${taxCode}-summary-tax">${formatCurrency(totalInvoiceTax)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">📦 Phí</div>
+    <div class="value" id="${taxCode}-summary-fee">${formatCurrency(totalInvoiceFee)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">🎁 Chiết khấu</div>
+    <div class="value" id="${taxCode}-summary-discount">${formatCurrency(totalInvoiceDiscount)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div>
+    <div class="value" id="${taxCode}-export-count">${filteredExports.length}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div>
+    <div class="value" id="${taxCode}-export-amount">${formatCurrency(totalExportRevenue)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div>
+    <div class="value" id="${taxCode}-export-profit">${formatCurrency(totalProfit)}</div>
+  </div>
+
+  <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại (Chưa thuế)</div>
+    <div class="value" id="${taxCode}-summary-totalAmount">${formatCurrency(totalAmount)}</div>
+  </div>
 
     <!-- Tabs và nội dung tab giữ nguyên -->
 
