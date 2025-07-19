@@ -249,16 +249,40 @@ body {
   }
 
   .app-header {
-    /* ❌ KHÔNG ép xuống dòng */
-    flex-direction: row !important; /* ✅ Buộc giữ ngang cả mobile */
-    flex-wrap: wrap;
-  }
-
-  .header-btn, .token-input {
-    flex: 1 1 auto;
-    min-width: calc(50% - 12px); /* ✅ Hai nút mỗi hàng, khoảng cách 10px */
-  }
+  background-color: #1f2d3d;
+  padding: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  flex-direction: row;
 }
+
+.mobile-toggle {
+  font-size: 18px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  cursor: pointer;
+  display: none;
+}
+
+.header-btn {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 120px;
+  text-align: center;
+}
+
 .header-btn:hover {
   background-color: #2980b9;
 }
@@ -276,17 +300,8 @@ body {
   border-radius: 6px;
   border: 1px solid #ccc;
   font-size: 14px;
-}
-
-.mobile-toggle {
-  display: none;
-  font-size: 18px;
-  background: #3498db;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 8px 12px;
-  cursor: pointer;
+  flex: 1 1 auto;
+  min-width: 180px;
 }
 
 @media (max-width: 768px) {
@@ -295,11 +310,12 @@ body {
   }
 
   .app-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-wrap: wrap;
+    flex-direction: row !important;
+    justify-content: flex-start;
   }
 
   .header-btn, .token-input {
-    width: 100%;
+    min-width: calc(50% - 10px);
   }
 }
