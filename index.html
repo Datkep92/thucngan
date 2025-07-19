@@ -5,11 +5,152 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Quản lý Hộ Kinh Doanh</title>
 
-  <!-- ✅ CSS -->
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+  <!-- ✅ CSS nội bộ -->
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f8f9fa;
+      color: #333;
+    }
+    header {
+      background: #007bff;
+      color: white;
+      padding: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+    header button, header input {
+      font-size: 14px;
+      padding: 6px 10px;
+      border: none;
+      border-radius: 4px;
+    }
+    header button {
+      background: white;
+      color: #007bff;
+      cursor: pointer;
+    }
+    header input {
+      width: 180px;
+    }
+    .container {
+      display: flex;
+      min-height: 100vh;
+    }
+    .sidebar {
+      width: 250px;
+      background: #ffffff;
+      border-right: 1px solid #ddd;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    .sidebar h3 {
+      margin-top: 0;
+    }
+    .sidebar ul {
+      list-style: none;
+      padding: 0;
+    }
+    .sidebar li {
+      padding: 6px 10px;
+      margin-bottom: 5px;
+      cursor: pointer;
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+    .sidebar li:hover {
+      background: #e2e6ea;
+    }
+    .main {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .mobile-only {
+      display: none;
+    }
+    .hide-on-mobile {
+      display: block;
+    }
+    .show-on-mobile {
+      display: block;
+      position: absolute;
+      z-index: 999;
+      top: 60px;
+      left: 0;
+      background: white;
+      border: 1px solid #ddd;
+      height: calc(100% - 60px);
+      width: 250px;
+      overflow-y: auto;
+    }
+
+    .summary-box {
+      background: #ffffff;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      margin-bottom: 12px;
+    }
+    .summary-box .label {
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 6px;
+    }
+    .summary-box .value {
+      font-size: 18px;
+      color: #007bff;
+    }
+
+    .hkd-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 15px;
+    }
+
+    /* Popup */
+    #export-popup, #customer-detail-popup, #customer-history-popup {
+      background: white;
+      border: 2px solid #007bff;
+      padding: 20px;
+      position: fixed;
+      top: 5%;
+      left: 50%;
+      transform: translateX(-50%);
+      max-width: 1000px;
+      width: 95%;
+      z-index: 9999;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      overflow-y: auto;
+      max-height: 90vh;
+    }
+
+    #export-popup {
+      border-color: #28a745;
+    }
+
+    @media (max-width: 768px) {
+      .mobile-only {
+        display: inline-block;
+      }
+      .hide-on-mobile {
+        display: none !important;
+      }
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  </style>
 
   <!-- ✅ JS thư viện -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
   <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
@@ -29,43 +170,34 @@
     <button onclick="showGitHubTokenPopup()">🔐 Nhập GitHub Token</button>
     <input id="tokenInput" placeholder="Nhập GitHub token..." />
     <button onclick="saveGitHubToken()">💾 Lưu token</button>
-    <button onclick="gitbu()" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
+    <button onclick="gitbu()" style="padding: 8px 16px; background-color: #dc3545; color: white; border-radius: 6px; cursor: pointer;">
       🗑️ Xóa tất cả file trên GitHub
     </button>
   </header>
 
-  <!-- ==== BODY CONTENT ==== -->
+  <!-- ==== BODY ==== -->
   <div class="container">
-    <!-- === SIDEBAR === -->
     <div class="sidebar hide-on-mobile" id="hkdList">
       <h3>📋 Danh sách HKD</h3>
       <ul id="businessList"></ul>
     </div>
 
-    <!-- === MAIN === -->
     <div class="main">
       <div id="mainContent">
-        <h2 style="color: #888; font-size: 20px; text-align: center; margin-top: 30px;">
-          📌 Chưa chọn HKD nào
-        </h2>
+        <h2 style="text-align:center; color:#888;">📌 Chưa chọn HKD nào</h2>
       </div>
     </div>
   </div>
 
-  <!-- ✅ POPUP: LỊCH SỬ KHÁCH HÀNG -->
-  <div id="customer-history-popup"
-       style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
-       background:white; border:2px solid #007bff; box-shadow:0 4px 20px rgba(0,0,0,0.3);
-       padding:20px; max-width:600px; width:90%; z-index:10000;">
+  <!-- ==== POPUPS ==== -->
+  <div id="customer-history-popup" style="display:none;">
     <div id="customer-history-content"></div>
     <div style="text-align:right; margin-top:10px;">
       <button onclick="closeCustomerHistoryPopup()">Đóng</button>
     </div>
   </div>
 
-  <!-- ✅ POPUP: XUẤT HÀNG -->
-  <div id="export-popup" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%);
-    background:white; border:2px solid #28a745; padding:20px; max-width:800px; width:95%; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+  <div id="export-popup" style="display:none;">
     <h3 id="export-popup-title">📤 Xuất hàng cho KH</h3>
     <div id="export-popup-content"></div>
     <div style="text-align:right; margin-top:10px;">
@@ -74,14 +206,9 @@
     </div>
   </div>
 
-  <!-- ✅ POPUP: CHI TIẾT KHÁCH HÀNG -->
-  <div id="customer-detail-popup" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%);
-    background:white; border:2px solid #007bff; padding:20px; max-width:1000px; width:95%; z-index:9999;
-    box-shadow:0 4px 12px rgba(0,0,0,0.2); overflow-y:auto; max-height:90vh">
-
+  <div id="customer-detail-popup" style="display:none;">
     <h2>👤 Chi tiết khách hàng</h2>
     <div id="customer-summary"></div>
-
     <hr>
     <h3>📊 Bộ lọc hóa đơn</h3>
     <div style="margin-bottom:10px">
@@ -93,24 +220,20 @@
       <input type="text" id="filter-keyword" placeholder="Tìm theo hàng hóa...">
       <button onclick="filterCustomerInvoices()">🔍 Lọc</button>
     </div>
-
     <h3>📦 Hàng hóa đã mua</h3>
     <div id="customer-goods-summary"></div>
-
     <hr>
     <h3>📤 Xuất hàng tiếp cho KH</h3>
     <div id="customer-export-area"></div>
-
     <hr>
     <h3>🧾 Lịch sử giao dịch</h3>
     <div id="customer-history-list"></div>
-
     <div style="text-align:right; margin-top:15px;">
       <button onclick="closeCustomerDetailPopup()">Đóng</button>
     </div>
   </div>
 
-  <!-- ==== SCRIPT CHẠY SAU ==== -->
+  <!-- ==== SCRIPT ==== -->
   <script>
     document.getElementById('zipFile').addEventListener('change', async function (e) {
       const files = Array.from(e.target.files);
@@ -119,9 +242,7 @@
 
     document.addEventListener('click', function(e) {
       if (e.target.closest('#businessList li')) {
-        if (window.innerWidth < 768) {
-          toggleSidebarMobile(true);
-        }
+        if (window.innerWidth < 768) toggleSidebarMobile(true);
       }
     });
 
@@ -153,7 +274,7 @@
     }
   </script>
 
-  <!-- ==== MODULE JS ==== -->
+  <!-- ✅ MODULE JS -->
   <script src="state.js"></script>
   <script src="dom-utils.js"></script>
   <script src="parseXmlInvoice.js"></script>
