@@ -1,8 +1,36 @@
+/* ====== BASE RESET ====== */
 body {
   font-family: "Segoe UI", sans-serif;
   margin: 0;
   background: #f8f9fa;
+  color: #333;
 }
+
+button, input, select {
+  font-family: inherit;
+  font-size: 14px;
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: white;
+  outline: none;
+  transition: all 0.2s ease;
+}
+button:hover {
+  background-color: #e9ecef;
+  cursor: pointer;
+}
+input[type="date"],
+input[type="text"] {
+  background: #fff;
+  padding: 6px 10px;
+}
+
+h2, h3 {
+  margin-top: 0;
+}
+
+/* ====== POPUP ====== */
 .popup-overlay {
   position: fixed;
   top: 0; left: 0;
@@ -11,7 +39,7 @@ body {
   z-index: 1000;
 }
 
-.popup {
+.popup, .popup-content {
   position: fixed;
   top: 10%;
   left: 50%;
@@ -19,11 +47,13 @@ body {
   background: white;
   border: 1px solid #ccc;
   z-index: 1001;
-  max-height: 80vh;
+  max-height: 85vh;
   overflow-y: auto;
   padding: 20px;
-  width: 900px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
+  width: 90%;
+  max-width: 1000px;
+  box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  border-radius: 8px;
 }
 
 .popup-header {
@@ -31,11 +61,13 @@ body {
   justify-content: space-between;
   align-items: center;
   font-weight: bold;
+  margin-bottom: 10px;
 }
 
+/* ====== LAYOUT ====== */
 .container {
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 50px);
 }
 
 .sidebar {
@@ -58,8 +90,9 @@ body {
 
 .sidebar li {
   cursor: pointer;
-  padding: 8px;
+  padding: 10px 12px;
   border-bottom: 1px solid #445;
+  transition: background 0.2s ease;
 }
 
 .sidebar li:hover {
@@ -69,10 +102,11 @@ body {
 .main {
   flex: 1;
   overflow-y: auto;
-  padding: 16px;
+  padding: 20px;
   background: #ffffff;
 }
 
+/* ====== MOBILE SUPPORT ====== */
 .hide-on-mobile {
   display: block;
 }
@@ -93,6 +127,9 @@ body {
   .mobile-only {
     display: inline-block;
   }
+  .container {
+    flex-direction: column;
+  }
 }
 
 .mobile-only {
@@ -100,11 +137,7 @@ body {
   margin-right: 8px;
 }
 
-.hkd-wrapper {
-  max-width: 1000px;
-  margin: 0 auto;
-}
-
+/* ====== SUMMARY BOX ====== */
 .hkd-summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
@@ -114,22 +147,25 @@ body {
 
 .summary-box {
   background: #f1f1f1;
-  padding: 10px;
+  padding: 12px;
   border-radius: 6px;
   border-left: 4px solid #007bff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
 }
 
 .summary-box .label {
   font-size: 14px;
-  color: #333;
+  color: #555;
 }
 
 .summary-box .value {
   font-size: 18px;
   font-weight: bold;
   margin-top: 4px;
+  color: #222;
 }
 
+/* ====== TABS ====== */
 .tabs {
   display: flex;
   margin-top: 20px;
@@ -141,14 +177,9 @@ body {
   margin-right: 4px;
   cursor: pointer;
   border-radius: 6px 6px 0 0;
-}
-.tab-content {
-  display: none;
+  transition: all 0.2s ease;
 }
 
-.tab-content.active {
-  display: block;
-}
 .tabs .tab.active {
   background: #007bff;
   color: white;
@@ -166,48 +197,32 @@ body {
   display: block;
 }
 
+/* ====== SECTION SPACING ====== */
 .hkd-section {
   margin-top: 16px;
 }
-.tab-content {
-  display: none;
+
+/* ====== TABLES (nếu có) ====== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+}
+th, td {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+thead {
+  background: #007bff;
+  color: white;
 }
 
-.tab-content.active {
-  display: block;
+/* ====== SCROLLBAR ====== */
+::-webkit-scrollbar {
+  width: 6px;
 }
-
-.popup-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 9998;
-}
-.popup-content {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  max-width: 90%;
-  max-height: 90vh;
-  overflow: auto;
-  z-index: 9999;
-}
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.popup-header button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 16px;
+::-webkit-scrollbar-thumb {
+  background-color: rgba(0,0,0,0.2);
+  border-radius: 4px;
 }
