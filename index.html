@@ -8,39 +8,6 @@
   <!-- ✅ CSS -->
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
-  <style>
-    .button-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      max-width: 400px;
-      margin: 16px auto;
-    }
-    .button-grid button {
-      padding: 12px;
-      background: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .button-grid button:hover {
-      background: #0056b3;
-    }
-    @media (max-width: 768px) {
-      .button-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
-
-  <!-- ✅ JS thư viện -->
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -73,17 +40,75 @@
     <div class="main">
       <div id="mainContent">
         <div id="hkdInfo">📌 Chưa chọn HKD nào</div>
-        <div class="button-grid">
-          <button onclick="viewInvoice()">🧾 Xem hóa đơn</button>
-          <button onclick="triggerExport()">📤 Xuất hàng</button>
-          <button onclick="deleteHKD()">🗑️ Xoá</button>
-          <button onclick="editHKD()">✏️ Sửa</button>
-        </div>
       </div>
     </div>
   </div>
 
-  <!-- ==== JS CHẠY SAU ==== -->
+  <!-- ✅ POPUP: LỊCH SỬ KHÁCH HÀNG -->
+  <div id="customer-history-popup"
+       style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+       background:white; border:2px solid #007bff; box-shadow:0 4px 20px rgba(0,0,0,0.3);
+       padding:20px; max-width:600px; width:90%; z-index:10000;">
+    <div id="customer-history-content"></div>
+    <div style="text-align:right; margin-top:10px;">
+      <button onclick="closeCustomerHistoryPopup()">Đóng</button>
+    </div>
+  </div>
+
+  <!-- ✅ POPUP: XUẤT HÀNG -->
+  <div id="export-popup" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%);
+    background:white; border:2px solid #28a745; padding:20px; max-width:800px; width:95%; z-index:9999; box-shadow:0 4px 12px rgba(0,0,0,0.2)">
+    <h3 id="export-popup-title">📤 Xuất hàng cho KH</h3>
+    <div id="export-popup-content"></div>
+    <div style="text-align:right; margin-top:10px;">
+      <button onclick="submitExportFromPopup()">✅ Xuất hàng</button>
+      <button onclick="closeExportPopup()">❌ Đóng</button>
+    </div>
+  </div>
+
+  <!-- ✅ POPUP: CHI TIẾT KHÁCH HÀNG -->
+  <div id="customer-detail-popup" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%);
+    background:white; border:2px solid #007bff; padding:20px; max-width:1000px; width:95%; z-index:9999;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2); overflow-y:auto; max-height:90vh">
+
+    <h2>👤 Chi tiết khách hàng</h2>
+    <div id="customer-summary"></div>
+
+    <hr>
+    <h3>📊 Bộ lọc hóa đơn</h3>
+    <div style="margin-bottom:10px">
+      <label><input type="radio" name="invoice-filter" value="all" checked> Tất cả</label>
+      <label><input type="radio" name="invoice-filter" value="paid"> Đã thanh toán</label>
+      <label><input type="radio" name="invoice-filter" value="unpaid"> Còn nợ</label>
+      Từ: <input type="date" id="filter-from-date">
+      Đến: <input type="date" id="filter-to-date">
+      <input type="text" id="filter-keyword" placeholder="Tìm theo hàng hóa...">
+      <button onclick="filterCustomerInvoices()">🔍 Lọc</button>
+    </div>
+
+    <h3>📦 Hàng hóa đã mua</h3>
+    <div id="customer-goods-summary"></div>
+
+    <hr>
+    <h3>📤 Xuất hàng tiếp cho KH</h3>
+    <div id="customer-export-area"></div>
+
+    <hr>
+    <h3>🧾 Lịch sử giao dịch</h3>
+    <div id="customer-history-list"></div>
+
+    <div style="text-align:right; margin-top:15px;">
+      <button onclick="closeCustomerDetailPopup()">Đóng</button>
+    </div>
+  </div>
+
+  <!-- ==== JS THƯ VIỆN ==== -->
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- ==== SCRIPT KHỞI TẠO ==== -->
   <script>
     document.getElementById('zipFile').addEventListener('change', async function (e) {
       const files = Array.from(e.target.files);
@@ -124,15 +149,9 @@
         style: { background: "#28a745" }
       }).showToast();
     }
-
-    // Dummy functions for buttons (replace with your real logic)
-    function viewInvoice() { alert('Xem hóa đơn'); }
-    function triggerExport() { alert('Xuất hàng'); }
-    function deleteHKD() { alert('Xoá HKD'); }
-    function editHKD() { alert('Sửa HKD'); }
   </script>
 
-  <!-- ==== JS MODULES ==== -->
+  <!-- ==== MODULE JS ==== -->
   <script src="state.js"></script>
   <script src="dom-utils.js"></script>
   <script src="parseXmlInvoice.js"></script>
@@ -142,5 +161,6 @@
   <script src="modules/customerManager.js"></script>
   <script src="modules/export.js"></script>
   <script src="main.js"></script>
+
 </body>
 </html>
