@@ -211,3 +211,12 @@ body {
   cursor: pointer;
   font-size: 16px;
 }
+.mobile-only {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-only {
+    display: inline-block;
+  }
+}
