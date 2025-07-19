@@ -220,20 +220,6 @@ body {
     display: inline-block;
   }
 }
-.hkd-button {
-  padding: 8px 14px;
-  background: #007bff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.hkd-button:hover {
-  background: #0056b3;
-}
 
 @media (max-width: 768px) {
   header {
@@ -245,6 +231,7 @@ body {
   }
 }
 
+
 .app-header {
   background-color: #1f2d3d;
   padding: 10px;
@@ -253,19 +240,25 @@ body {
   gap: 10px;
   align-items: center;
   justify-content: flex-start;
+  flex-direction: row; /* ✅ Quan trọng: luôn giữ theo chiều ngang */
 }
 
-.header-btn {
-  background-color: #3498db;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: background 0.3s;
-}
+@media (max-width: 768px) {
+  .mobile-toggle {
+    display: inline-block;
+  }
 
+  .app-header {
+    /* ❌ KHÔNG ép xuống dòng */
+    flex-direction: row !important; /* ✅ Buộc giữ ngang cả mobile */
+    flex-wrap: wrap;
+  }
+
+  .header-btn, .token-input {
+    flex: 1 1 auto;
+    min-width: calc(50% - 12px); /* ✅ Hai nút mỗi hàng, khoảng cách 10px */
+  }
+}
 .header-btn:hover {
   background-color: #2980b9;
 }
