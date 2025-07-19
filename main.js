@@ -1,27 +1,46 @@
-// 📁 main.js
-
-// 📁 main.js
-
 async function handleFiles() {
   const input = document.getElementById("zipFile");
   const files = Array.from(input.files);
+  if (!files.length) {
+    toast("❌ Không có file nào được chọn", 3000);
+    return;
+  }
 
   for (const file of files) {
     if (!file.name.endsWith('.zip')) continue;
 
-    const invoice = await extractInvoiceFromZip(file);
+    let invoice;
+    try {
+      invoice = await extractInvoiceFromZip(file);
+    } catch (err) {
+      console.error("❌ Lỗi khi trích xuất XML:", err);
+      toast(`❌ Không thể đọc hóa đơn từ file: ${file.name}`, 3000);
+      continue;
+    }
 
-    // ✅ Gán tổng số liệu vào hóa đơn để dùng sau
-    invoice.totalBeforeTax = invoice?.totals?.beforeTax || 0;
-    invoice.totalTax = invoice?.totals?.tax || 0;
-    invoice.totalFee = invoice?.totals?.fee || 0;
-    invoice.discount = invoice?.totals?.discount || 0;
-    invoice.total = invoice?.totals?.total || 0;
+    // ✅ Kiểm tra và gán totals an toàn
+    const totals = invoice?.totals || {};
+    const hasTotals = ['beforeTax', 'tax', 'discount', 'total'].some(k => typeof totals[k] === 'number' && !isNaN(totals[k]));
 
+    if (!hasTotals) {
+      console.warn("⚠️ Hóa đơn thiếu dữ liệu tổng:", invoice);
+      toast(`⚠️ Hóa đơn thiếu totals - bỏ qua file ${file.name}`, 3000);
+      continue;
+    }
+
+    // Gán dữ liệu tổng
+    invoice.totalBeforeTax = parseFloat(totals.beforeTax) || 0;
+    invoice.totalTax = parseFloat(totals.tax) || 0;
+    invoice.totalFee = parseFloat(totals.fee) || 0;
+    invoice.discount = parseFloat(totals.discount) || 0;
+    invoice.total = parseFloat(totals.total) || (invoice.totalBeforeTax + invoice.totalTax);
+
+    // Gán thông tin mã số thuế + tên
     const taxCode = invoice?.buyerInfo?.taxCode?.trim() || 'UNKNOWN';
     const name = invoice?.buyerInfo?.name?.trim() || taxCode;
     const mccqt = (invoice.invoiceInfo?.mccqt || '').toUpperCase();
 
+    // Kiểm tra trùng MCCQT
     const exists = (hkdData[taxCode]?.invoices || []).some(
       inv => (inv.invoiceInfo?.mccqt || '') === mccqt
     );
@@ -30,6 +49,7 @@ async function handleFiles() {
       continue;
     }
 
+    // Nếu chưa có HKD, khởi tạo
     if (!hkdData[taxCode]) {
       hkdData[taxCode] = {
         name,
@@ -37,15 +57,18 @@ async function handleFiles() {
         tonkhoCK: [],
         tonkhoKM: [],
         invoices: [],
-        exports: []
+        exports: [],
+        customers: []
       };
       hkdOrder.push(taxCode);
     } else if (!hkdData[taxCode].name) {
       hkdData[taxCode].name = name;
     }
 
+    // ✅ Đưa vào danh sách hóa đơn
     hkdData[taxCode].invoices.push(invoice);
 
+    // ✅ Phân bổ vào từng loại kho
     invoice.products.forEach(p => {
       const entry = JSON.parse(JSON.stringify(p));
       const arr =
@@ -54,20 +77,18 @@ async function handleFiles() {
       hkdData[taxCode][arr].push(entry);
     });
 
-    logAction(`Đã nhập hóa đơn ${invoice.invoiceInfo.number}`, JSON.parse(JSON.stringify(hkdData)));
+    logAction(`📥 Đã nhập hóa đơn ${invoice.invoiceInfo.number}`, JSON.parse(JSON.stringify(hkdData)));
   }
 
+  // ✅ Lưu và render
   saveDataToLocalStorage();
   renderHKDList();
-
   if (hkdOrder.length > 0) {
     renderHKDTab(hkdOrder[hkdOrder.length - 1]);
   }
 
   toast('✅ Đã nhập xong hóa đơn', 2000);
 }
-
-
 async function extractInvoiceFromZip(zipFile) {
     const zip = await JSZip.loadAsync(zipFile);
     const xmlFile = Object.values(zip.files).find(f => f.name.endsWith('.xml'));
