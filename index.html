@@ -12,23 +12,24 @@
 <body>
 
   <!-- ==== HEADER ==== -->
-<header style="background-color: #007bff; color: white; padding: 10px; display: flex; align-items: center; flex-wrap: wrap;">
-  <button onclick="toggleSidebarMobile()" class="mobile-only" style="background: none; border: none; font-size: 20px; color: white; margin-right: 10px;">☰ HKD</button>
+<header style="background: #f1f1f1; padding: 10px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; border-bottom: 1px solid #ccc;">
+  <button onclick="toggleSidebarMobile()" class="mobile-only" style="background: none; border: none; font-size: 20px; color: #333;">☰ HKD</button>
 
-  <button onclick="document.getElementById('zipFile').click()" style="margin-right:10px;">📁 Chọn file</button>
+  <button onclick="document.getElementById('zipFile').click()" class="hkd-button">📁 Chọn file</button>
   <input type="file" id="zipFile" accept=".zip" multiple style="display:none;">
-  
-  <button onclick="clearAll()" style="margin-right:10px;">🗑️ Xoá toàn bộ</button>
-  <button onclick="showLogHistory()" style="margin-right:10px;">📝 Xem lỗi gần đây</button>
-  <button onclick="undoAction()" style="margin-right:10px;">🔁 Undo</button>
-  <button onclick="searchHKD()" style="margin-right:10px;">🔍 Tìm kiếm</button>
 
-  <button onclick="showGitHubTokenPopup()" style="margin-right:10px;">🔐 Nhập GitHub Token</button>
-  <input id="tokenInput" placeholder="Nhập GitHub token..." style="margin-right:10px;" />
-  <button onclick="saveGitHubToken()" style="margin-right:10px;">💾 Lưu token</button>
+  <button onclick="clearAll()" class="hkd-button">🗑️ Xoá toàn bộ</button>
+  <button onclick="showLogHistory()" class="hkd-button">📝 Xem lỗi gần đây</button>
+  <button onclick="undoAction()" class="hkd-button">🔁 Undo</button>
+  <button onclick="searchHKD()" class="hkd-button">🔍 Tìm kiếm</button>
 
-  <button onclick="gitbu()" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
-    🗑️ Xóa tất cả file trên GitHub
+  <button onclick="showGitHubTokenPopup()" class="hkd-button">🔐 Nhập Token</button>
+  <input id="tokenInput" placeholder="Token GitHub..." style="padding:6px 10px; border:1px solid #ccc; border-radius:6px;" />
+
+  <button onclick="saveGitHubToken()" class="hkd-button">💾 Lưu token</button>
+
+  <button onclick="gitbu()" style="padding: 8px 14px; background: #e74c3c; color: white; border: none; border-radius: 6px; cursor: pointer;">
+    🗑️ Xoá file GitHub
   </button>
 </header>
 
