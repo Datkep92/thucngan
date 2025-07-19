@@ -8,29 +8,31 @@
   <!-- ✅ CSS -->
   <link rel="stylesheet" href="styles.css" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/toastify-js/src/toastify.min.css" />
+
+  <!-- ✅ JS thư viện -->
+  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 <body>
 
   <!-- ==== HEADER ==== -->
   <header class="app-header">
     <button onclick="toggleSidebarMobile()" class="mobile-toggle">☰ HKD</button>
-
     <button onclick="document.getElementById('zipFile').click()" class="header-btn">📁 Chọn file</button>
     <input type="file" id="zipFile" accept=".zip" multiple style="display:none;">
-
     <button onclick="clearAll()" class="header-btn">🗑️ Xoá toàn bộ</button>
-    <button onclick="showLogHistory()" class="header-btn">📝 Xem lỗi</button>
+    <button onclick="showLogHistory()" class="header-btn">📝 Xem lỗi gần đây</button>
     <button onclick="undoAction()" class="header-btn">🔁 Undo</button>
-    <button onclick="searchHKD()" class="header-btn">🔍 Tìm HKD</button>
-    <button onclick="showGitHubTokenPopup()" class="header-btn">🔐 Nhập Token</button>
-
+    <button onclick="searchHKD()" class="header-btn">🔍 Tìm kiếm</button>
+    <button onclick="showGitHubTokenPopup()" class="header-btn">🔐 Nhập GitHub Token</button>
     <input id="tokenInput" placeholder="Nhập GitHub token..." class="token-input" />
-    <button onclick="saveGitHubToken()" class="header-btn">💾 Lưu</button>
-
-    <button onclick="gitbu()" class="header-btn danger-btn">🗑️ Xóa tất cả GitHub</button>
+    <button onclick="saveGitHubToken()" class="header-btn">💾 Lưu token</button>
+    <button onclick="gitbu()" class="header-btn danger-btn">🗑️ Xóa tất cả file trên GitHub</button>
   </header>
 
-  <!-- ==== BODY ==== -->
+  <!-- ==== BODY CONTENT ==== -->
   <div class="container">
     <!-- === SIDEBAR === -->
     <div class="sidebar hide-on-mobile" id="hkdList">
@@ -46,22 +48,23 @@
     </div>
   </div>
 
-  <!-- ==== POPUPS ==== -->
-  <div id="customer-history-popup" class="popup-overlay" style="display:none">
+  <!-- ✅ POPUP LỊCH SỬ -->
+  <div class="popup-overlay" id="customer-history-popup" style="display:none">
     <div class="popup">
       <div class="popup-header">
-        <span>🧾 Lịch sử khách hàng</span>
-        <button onclick="closeCustomerHistoryPopup()">❌</button>
+        <span>Lịch sử khách hàng</span>
+        <button onclick="closeCustomerHistoryPopup()">✖</button>
       </div>
       <div id="customer-history-content"></div>
     </div>
   </div>
 
-  <div id="export-popup" class="popup-overlay" style="display:none">
+  <!-- ✅ POPUP XUẤT HÀNG -->
+  <div class="popup-overlay" id="export-popup" style="display:none">
     <div class="popup">
       <div class="popup-header">
-        <span>📤 Xuất hàng cho KH</span>
-        <button onclick="closeExportPopup()">❌</button>
+        <h3 id="export-popup-title">📤 Xuất hàng cho KH</h3>
+        <button onclick="closeExportPopup()">✖</button>
       </div>
       <div id="export-popup-content"></div>
       <div style="text-align:right; margin-top:10px;">
@@ -70,52 +73,43 @@
     </div>
   </div>
 
-  <div id="customer-detail-popup" class="popup-overlay" style="display:none">
+  <!-- ✅ POPUP CHI TIẾT KH -->
+  <div class="popup-overlay" id="customer-detail-popup" style="display:none">
     <div class="popup">
       <div class="popup-header">
-        <span>👤 Chi tiết khách hàng</span>
-        <button onclick="closeCustomerDetailPopup()">❌</button>
+        <h3>👤 Chi tiết khách hàng</h3>
+        <button onclick="closeCustomerDetailPopup()">✖</button>
       </div>
+
       <div id="customer-summary"></div>
       <hr>
-      <h3>📊 Bộ lọc hóa đơn</h3>
+      <h4>📊 Bộ lọc hóa đơn</h4>
       <div>
         <label><input type="radio" name="invoice-filter" value="all" checked> Tất cả</label>
         <label><input type="radio" name="invoice-filter" value="paid"> Đã thanh toán</label>
-        <label><input type="radio" name="invoice-filter" value="unpaid"> Còn nợ</label>
+        <label><input type="radio" name="invoice-filter" value="unpaid"> Còn nợ</label><br/>
         Từ: <input type="date" id="filter-from-date">
         Đến: <input type="date" id="filter-to-date">
         <input type="text" id="filter-keyword" placeholder="Tìm theo hàng hóa...">
-        <button onclick="filterCustomerInvoices()">🔍 Lọc</button>
+        <button onclick="filterCustomerInvoices()">🔍</button>
       </div>
-      <h3>📦 Hàng hóa đã mua</h3>
+
+      <h4>📦 Hàng hóa đã mua</h4>
       <div id="customer-goods-summary"></div>
-      <hr>
-      <h3>📤 Xuất hàng tiếp</h3>
+
+      <h4>📤 Xuất hàng tiếp</h4>
       <div id="customer-export-area"></div>
-      <hr>
-      <h3>🧾 Lịch sử giao dịch</h3>
+
+      <h4>🧾 Lịch sử giao dịch</h4>
       <div id="customer-history-list"></div>
     </div>
   </div>
 
-  <!-- ==== LIBS ==== -->
-  <script src="https://cdn.jsdelivr.net/npm/toastify-js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.4.120/build/pdf.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-  <!-- ==== INIT ==== -->
+  <!-- ==== SCRIPT CHẠY SAU ==== -->
   <script>
     document.getElementById('zipFile').addEventListener('change', async function (e) {
       const files = Array.from(e.target.files);
       if (files.length > 0) await handleFiles(files);
-    });
-
-    document.addEventListener('click', function(e) {
-      if (e.target.closest('#businessList li')) {
-        if (window.innerWidth < 768) toggleSidebarMobile(true);
-      }
     });
 
     function toggleSidebarMobile(forceClose = false) {
@@ -127,6 +121,10 @@
         sidebar.classList.remove('hide-on-mobile');
         sidebar.classList.add('show-on-mobile');
       }
+    }
+
+    if (window.innerWidth < 768) {
+      document.body.classList.add('compact-mode');
     }
 
     function saveGitHubToken() {
@@ -142,7 +140,7 @@
     }
   </script>
 
-  <!-- ==== MODULES ==== -->
+  <!-- ==== JS MODULE ==== -->
   <script src="state.js"></script>
   <script src="dom-utils.js"></script>
   <script src="parseXmlInvoice.js"></script>
