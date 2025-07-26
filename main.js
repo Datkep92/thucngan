@@ -1,94 +1,65 @@
+// 📁 main.js
+
+// 📁 main.js
+
 async function handleFiles() {
-  const input = document.getElementById("zipFile");
-  const files = Array.from(input.files);
-  if (!files.length) {
-    toast("❌ Không có file nào được chọn", 3000);
-    return;
-  }
+    const input = document.getElementById("zipFile");
+    const files = Array.from(input.files);
 
-  for (const file of files) {
-    if (!file.name.endsWith('.zip')) continue;
+    for (const file of files) {
+        if (!file.name.endsWith('.zip')) continue;
 
-    let invoice;
-    try {
-      invoice = await extractInvoiceFromZip(file);
-    } catch (err) {
-      console.error("❌ Lỗi khi trích xuất XML:", err);
-      toast(`❌ Không thể đọc hóa đơn từ file: ${file.name}`, 3000);
-      continue;
+        const invoice = await extractInvoiceFromZip(file);
+        const taxCode = invoice?.buyerInfo?.taxCode?.trim() || 'UNKNOWN';
+        const name = invoice?.buyerInfo?.name?.trim() || taxCode;
+        const mccqt = (invoice.invoiceInfo?.mccqt || '').toUpperCase();
+
+        const exists = (hkdData[taxCode]?.invoices || []).some(inv => (inv.invoiceInfo?.mccqt || '') === mccqt);
+        if (exists) {
+            toast(`⚠️ Bỏ qua MCCQT trùng: ${mccqt}`, 3000);
+            continue;
+        }
+
+        if (!hkdData[taxCode]) {
+            // Tạo mới HKD nếu chưa có
+            hkdData[taxCode] = {
+                name,
+                tonkhoMain: [],
+                tonkhoCK: [],
+                tonkhoKM: [],
+                invoices: [],
+                exports: []
+            };
+            hkdOrder.push(taxCode);
+        } else {
+            // Nếu HKD đã có nhưng chưa có tên, thì bổ sung tên
+            if (!hkdData[taxCode].name) {
+                hkdData[taxCode].name = name;
+            }
+        }
+
+        hkdData[taxCode].invoices.push(invoice);
+
+        invoice.products.forEach(p => {
+            const entry = JSON.parse(JSON.stringify(p));
+            const arr = entry.category === 'hang_hoa' ? 'tonkhoMain' :
+                entry.category === 'KM' ? 'tonkhoKM' : 'tonkhoCK';
+            hkdData[taxCode][arr].push(entry);
+        });
+
+        logAction(`Đã nhập hóa đơn ${invoice.invoiceInfo.number}`, JSON.parse(JSON.stringify(hkdData)));
     }
 
-    // ✅ Kiểm tra và gán totals an toàn
-    const totals = invoice?.totals || {};
-    const hasTotals = ['beforeTax', 'tax', 'discount', 'total'].some(k => typeof totals[k] === 'number' && !isNaN(totals[k]));
-
-    if (!hasTotals) {
-      console.warn("⚠️ Hóa đơn thiếu dữ liệu tổng:", invoice);
-      toast(`⚠️ Hóa đơn thiếu totals - bỏ qua file ${file.name}`, 3000);
-      continue;
+    saveDataToLocalStorage();
+    renderHKDList();
+    // 👉 Hiển thị HKD vừa nhập cuối cùng (mới nhất)
+    if (hkdOrder.length > 0) {
+        renderHKDTab(hkdOrder[hkdOrder.length - 1]);
     }
-
-    // Gán dữ liệu tổng
-    invoice.totalBeforeTax = parseFloat(totals.beforeTax) || 0;
-    invoice.totalTax = parseFloat(totals.tax) || 0;
-    invoice.totalFee = parseFloat(totals.fee) || 0;
-    invoice.discount = parseFloat(totals.discount) || 0;
-    invoice.total = parseFloat(totals.total) || (invoice.totalBeforeTax + invoice.totalTax);
-
-    // Gán thông tin mã số thuế + tên
-    const taxCode = invoice?.buyerInfo?.taxCode?.trim() || 'UNKNOWN';
-    const name = invoice?.buyerInfo?.name?.trim() || taxCode;
-    const mccqt = (invoice.invoiceInfo?.mccqt || '').toUpperCase();
-
-    // Kiểm tra trùng MCCQT
-    const exists = (hkdData[taxCode]?.invoices || []).some(
-      inv => (inv.invoiceInfo?.mccqt || '') === mccqt
-    );
-    if (exists) {
-      toast(`⚠️ Bỏ qua MCCQT trùng: ${mccqt}`, 3000);
-      continue;
-    }
-
-    // Nếu chưa có HKD, khởi tạo
-    if (!hkdData[taxCode]) {
-      hkdData[taxCode] = {
-        name,
-        tonkhoMain: [],
-        tonkhoCK: [],
-        tonkhoKM: [],
-        invoices: [],
-        exports: [],
-        customers: []
-      };
-      hkdOrder.push(taxCode);
-    } else if (!hkdData[taxCode].name) {
-      hkdData[taxCode].name = name;
-    }
-
-    // ✅ Đưa vào danh sách hóa đơn
-    hkdData[taxCode].invoices.push(invoice);
-
-    // ✅ Phân bổ vào từng loại kho
-    invoice.products.forEach(p => {
-      const entry = JSON.parse(JSON.stringify(p));
-      const arr =
-        entry.category === 'hang_hoa' ? 'tonkhoMain' :
-        entry.category === 'KM' ? 'tonkhoKM' : 'tonkhoCK';
-      hkdData[taxCode][arr].push(entry);
-    });
-
-    logAction(`📥 Đã nhập hóa đơn ${invoice.invoiceInfo.number}`, JSON.parse(JSON.stringify(hkdData)));
-  }
-
-  // ✅ Lưu và render
-  saveDataToLocalStorage();
-  renderHKDList();
-  if (hkdOrder.length > 0) {
-    renderHKDTab(hkdOrder[hkdOrder.length - 1]);
-  }
-
-  toast('✅ Đã nhập xong hóa đơn', 2000);
+    toast('✅ Đã nhập xong hóa đơn', 2000);
 }
+
+
 async function extractInvoiceFromZip(zipFile) {
     const zip = await JSZip.loadAsync(zipFile);
     const xmlFile = Object.values(zip.files).find(f => f.name.endsWith('.xml'));
@@ -141,7 +112,6 @@ function renderHKDTab(taxCode) {
   let totalInvoiceFee = 0;
   let totalInvoiceDiscount = 0;
 
-  // ✅ Dùng dữ liệu đã gán sẵn từ parseXmlInvoice
   for (const inv of filteredInvoices) {
     totalInvoiceAmount += inv.totalBeforeTax || 0;
     totalInvoiceTax += inv.totalTax || 0;
@@ -151,10 +121,12 @@ function renderHKDTab(taxCode) {
 
   const totalExportRevenue = filteredExports.reduce((sum, ex) => sum + (ex.total || 0), 0);
 
+  // Tổng tồn kho thực tế (Hàng - Chiết khấu)
   const totalHang = hkd.tonkhoMain.reduce((s, i) => s + (i.amount || 0), 0);
   const totalCK = hkd.tonkhoCK.reduce((s, i) => s + (i.amount || 0), 0);
   const totalAmountMain = totalHang - Math.abs(totalCK);
 
+  // Tính tổng giá vốn từ các đơn đã xuất (dựa theo giá nhập lưu trong priceInput)
   let totalCost = 0;
   for (const ex of filteredExports) {
     for (const line of ex.items || []) {
@@ -175,43 +147,16 @@ function renderHKDTab(taxCode) {
     </div>
 
     <div class="hkd-summary-grid hkd-section">
-      <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div>
-    <div class="value" id="${taxCode}-invoice-count">${filteredInvoices.length}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div>
-    <div class="value" id="${taxCode}-summary-total">${formatCurrency(totalInvoiceAmount)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div>
-    <div class="value" id="${taxCode}-summary-tax">${formatCurrency(totalInvoiceTax)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">📦 Phí</div>
-    <div class="value" id="${taxCode}-summary-fee">${formatCurrency(totalInvoiceFee)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">🎁 Chiết khấu</div>
-    <div class="value" id="${taxCode}-summary-discount">${formatCurrency(totalInvoiceDiscount)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div>
-    <div class="value" id="${taxCode}-export-count">${filteredExports.length}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div>
-    <div class="value" id="${taxCode}-export-amount">${formatCurrency(totalExportRevenue)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div>
-    <div class="value" id="${taxCode}-export-profit">${formatCurrency(totalProfit)}</div>
-  </div>
-
-  <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại (Chưa thuế)</div>
-    <div class="value" id="${taxCode}-summary-totalAmount">${formatCurrency(totalAmount)}</div>
-  </div>
-
-    <!-- Tabs và nội dung tab giữ nguyên -->
+      <div class="summary-box"><div class="label">📥 Tổng HĐ đầu vào</div><div class="value">${filteredInvoices.length}</div></div>
+      <div class="summary-box"><div class="label">🧾 Tổng HDST đã T.Toán</div><div class="value">${formatCurrency(totalInvoiceAmount)}</div></div>
+      <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${formatCurrency(totalInvoiceTax)}</div></div>
+      <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${formatCurrency(totalInvoiceFee)}</div></div>
+      <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${formatCurrency(totalInvoiceDiscount)}</div></div>
+      <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${filteredExports.length}</div></div>
+      <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${formatCurrency(totalExportRevenue)}</div></div>
+      <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${formatCurrency(totalProfit)}</div></div>
+      <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại</div><div class="value">${formatCurrency(totalAmountMain)}</div></div>
+    </div>
 
     <div class="tabs">
       <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
