@@ -91,11 +91,8 @@ function renderHKDList() {
 
 
 
-// customerManager.js - FULL CHỨC NĂNG (cập nhật popup đầy đủ thông tin KH + chỉnh sửa dòng hàng xuất)
-
-// main.js
-
 function renderHKDTab(taxCode) {
+  currentTaxCode = taxCode; // Cập nhật currentTaxCode
   ensureHkdData(taxCode);
   const hkd = hkdData[taxCode];
   const name = hkd.name || taxCode;
@@ -201,7 +198,7 @@ function renderHKDTab(taxCode) {
   renderTonKhoTab(taxCode, 'main');
   renderInvoiceTab(taxCode);
   renderExportGoodsTab(taxCode);
-  renderExportHistoryTable(taxCode);
+  //renderExportHistoryTable(taxCode);
 
   const khContainer = document.getElementById(`${taxCode}-customerTabPlaceholder`);
   if (khContainer) {
@@ -351,8 +348,8 @@ function openTab(evt, tabId) {
     renderInvoiceTab(taxCode);
   } else if (tabId.includes('xuathang')) {
     renderExportGoodsTab(taxCode); // Đảm bảo gọi từ exportGoodsTab.js
-  } else if (tabId.includes('lichsu')) {
-    renderExportHistoryTable(taxCode);
+  //} else if (tabId.includes('lichsu')) {
+    //renderExportHistoryTable(taxCode);
   } else if (tabId.includes('quanlykh')) {
     renderCustomerTab(taxCode);
   }
