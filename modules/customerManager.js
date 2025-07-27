@@ -788,47 +788,27 @@ function randomExportGoodsByCustomer(taxCode, customerIndex) {
 }
 
 function submitExportForCustomer(taxCode, customerIndex) {
-    const hkd = hkdData[taxCode];
-    const kh = hkd.customers[customerIndex];
-const list = Array.isArray(hkd.tempExportListForKH)
-  ? hkd.tempExportListForKH.filter(i => i.exportQty > 0)
-  : [];
-    if (list.length === 0) return alert("Chưa chọn hàng để xuất");
+  const hkd = hkdData[taxCode];
+  const kh = hkd.customers[customerIndex];
+  const list = Array.isArray(hkd.tempExportListForKH)
+    ? hkd.tempExportListForKH.filter(i => i.exportQty > 0)
+    : [];
 
-    const total = list.reduce((sum, i) => sum + i.exportQty * i.sellPrice, 0);
-    const exportItems = list.map(i => ({
-        name: i.name,
-        unit: i.unit,
-        qty: i.exportQty,
-        price: i.sellPrice,
-        amount: i.exportQty * i.sellPrice,
-        tax: 0
-    }));
+  if (list.length === 0) {
+    showToast('❗ Chưa chọn hàng để xuất', 3000, 'error');
+    return;
+  }
 
-    // Trừ tồn kho
-    for (let item of list) {
-        const tonkhoItem = hkd.tonkhoMain.find(t => t.name === item.name && t.unit === item.unit);
-        if (tonkhoItem) tonkhoItem.qty -= item.exportQty;
-    }
+  submitExportGoods(taxCode, list, {
+    name: kh.name,
+    address: kh.address,
+    phone: kh.phone,
+    mst: kh.taxCodeInput,
+    type: kh.type
+  });
 
-    const newInvoice = {
-        date: Date.now(),
-        total,
-        isPaid: true,
-        items: exportItems,
-        profit: 0
-    };
-
-    kh.history = kh.history || [];
-    kh.history.push(newInvoice);
-
-    saveDataToLocalStorage();
-    alert("✅ Đã xuất hàng thành công");
-    closeCustomerDetailPopup();
-    renderCustomerTab(taxCode);
-    renderTonKhoTab(taxCode);
+  closeCustomerDetailPopup();
 }
-
 function getCustomerRevenue(kh) {
     return kh.history?.reduce((sum, h) => sum + (h.total || 0), 0) || 0;
 }

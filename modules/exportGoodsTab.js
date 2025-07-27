@@ -242,6 +242,7 @@ function submitExportForCustomer(taxCode, customerIndex) {
 
   closeCustomerDetailPopup();
 }
+// ✅ Cập nhật submitExportOrder để phân loại khách thân thiết và khách lẻ
 function submitExportOrder(taxCode) {
   const hkd = hkdData[taxCode];
   if (!hkd) return;
@@ -255,7 +256,6 @@ function submitExportOrder(taxCode) {
     return;
   }
 
-  // Lấy thông tin khách hàng
   const getInput = (id) => {
     const el = document.getElementById(id);
     return el ? el.value.trim() : '';
@@ -288,9 +288,13 @@ function submitExportOrder(taxCode) {
     const stock = hkd.tonkhoMain.find(i => i.name === item.name && i.unit === item.unit);
     if (stock) {
       stock.quantity -= item.qty;
+
+      // ✅ Cập nhật lại thành tiền tồn kho
+      stock.amount = stock.quantity * stock.price;
+
       if (stock.quantity <= 0) {
         const idx = hkd.tonkhoMain.indexOf(stock);
-        if (idx > -1) hkd.tonkhoMain.splice(idx, 1); // Xóa khỏi tồn kho
+        if (idx > -1) hkd.tonkhoMain.splice(idx, 1);
       }
     }
   }
@@ -301,6 +305,7 @@ function submitExportOrder(taxCode) {
     customerPhone: finalPhone,
     customerTaxCode: finalTaxCode,
     isKhachLe,
+    isAutoCustomer: isKhachLe,
     items: exportItems,
     total,
     date: Date.now(),
@@ -308,45 +313,46 @@ function submitExportOrder(taxCode) {
     profit: 0
   };
 
-  // ✅ Lưu vào lịch sử hóa đơn
   hkd.exports = hkd.exports || [];
   hkd.exports.push(newExport);
 
-  // ✅ Nếu là Hộ KD → lưu vào danh sách KH
-  if (!isKhachLe) {
-    hkd.customers = hkd.customers || [];
+  hkd.customers = hkd.customers || [];
 
-    const existing = hkd.customers.find(kh =>
-      kh.name === finalName &&
-      kh.address === finalAddress &&
-      kh.taxCode === finalTaxCode
-    );
+  const existing = hkd.customers.find(kh =>
+    kh.name === finalName &&
+    kh.address === finalAddress &&
+    kh.taxCode === finalTaxCode
+  );
 
-    if (existing) {
-      existing.history = existing.history || [];
-      existing.history.push(newExport);
-    } else {
-      hkd.customers.push({
-        name: finalName,
-        address: finalAddress,
-        phone: finalPhone,
-        taxCode: finalTaxCode,
-        history: [newExport]
-      });
-    }
+  if (existing) {
+    existing.history = existing.history || [];
+    existing.history.push(newExport);
+  } else {
+    hkd.customers.push({
+      name: finalName,
+      address: finalAddress,
+      phone: finalPhone,
+      taxCode: finalTaxCode,
+      isAutoCustomer: isKhachLe,
+      history: [newExport]
+    });
   }
 
   saveDataToLocalStorage();
   alert("✅ Đã xuất hàng thành công!");
 
-  // ✅ Cập nhật lại các giao diện
-updateMainTotalDisplay(taxCode); // ✅ Thêm dòng này
+  updateMainTotalDisplay(taxCode);
   renderTonKhoTab(taxCode);
   renderExportGoodsTab(taxCode);
   renderCustomerTab(taxCode);
-  renderExportHistoryTable(taxCode); // nếu có bảng lịch sử
+  renderExportHistoryTable(taxCode);
 }
 
+window.submitExportOrder = submitExportOrder;
+
+function roundToNearest(value, step = 500) {
+  return Math.round(value / step) * step;
+}
 // 🔁 Gắn global để gọi từ HTML
 window.submitExportOrder = submitExportOrder;
 
@@ -407,77 +413,133 @@ function exportGoodsToExcel(taxCode, customerInfo, exportList) {
 }
 
 function submitExportGoods(taxCode, exportList, customerInfo = {}) {
-    const hkd = hkdData[taxCode];
-    if (!hkd) return;
+  const hkd = hkdData[taxCode];
+  if (!hkd) {
+    showToast('❌ Không tìm thấy dữ liệu HKD', 3000, 'error');
+    return;
+  }
 
-    const timestamp = new Date().toISOString();
-    let total = 0;
+  const timestamp = new Date().toISOString();
+  let total = 0;
 
-    const validItems = exportList.filter(item => parseFloat(item.exportQty) > 0);
+  const validItems = exportList.filter(item => parseFloat(item.exportQty) > 0);
+  if (validItems.length === 0) {
+    showToast('❗ Chưa chọn hàng để xuất', 3000, 'error');
+    return;
+  }
 
-    validItems.forEach(item => {
-        const qty = parseFloat(item.exportQty);
-        const price = parseFloat(item.sellPrice || 0);
-        total += qty * price;
+  validItems.forEach(item => {
+    const qty = parseFloat(item.exportQty);
+    const price = parseFloat(item.sellPrice || 0);
+    total += qty * price;
 
-        const match = hkd.tonkhoMain.find(i => i.name === item.name && i.unit === item.unit);
-        if (match) {
-            match.quantity -= qty;
-            if (match.quantity <= 0) {
-                hkd.tonkhoMain = hkd.tonkhoMain.filter(i => !(i.name === match.name && i.unit === match.unit));
-            }
-        }
-    });
-
-    hkd.exports = hkd.exports || [];
-    hkd.exports.push({
-        date: timestamp,
-        customer: customerInfo,
-        items: validItems,
-        total: Math.round(total)
-    });
-
-    // ✅ Lưu khách hàng
-
-    if (!hkdData[taxCode].customers) hkdData[taxCode].customers = [];
-
-    const existed = hkdData[taxCode].customers.find(c =>
-        c.name === customerInfo.name &&
-        c.address === customerInfo.address &&
-        c.phone === customerInfo.phone
-    );
-
-    if (!existed) {
-        hkdData[taxCode].customers.push({
-            name: customerInfo.name,
-            address: customerInfo.address,
-            phone: customerInfo.phone || '',
-            taxCodeInput: customerInfo.mst || '',
-            type: customerInfo.type || 'ho_kinh_doanh',
-            history: [{
-                date: timestamp,
-                items: validItems,
-                total: Math.round(total)
-            }]
-        });
-    } else {
-        existed.history = existed.history || [];
-        existed.history.push({
-            date: timestamp,
-            items: validItems,
-            total: Math.round(total)
-        });
+    const match = hkd.tonkhoMain.find(i => i.name === item.name && i.unit === item.unit);
+    if (match) {
+      match.quantity = parseFloat(match.quantity) - qty;
+      if (match.quantity <= 0) {
+        hkd.tonkhoMain = hkd.tonkhoMain.filter(i => !(i.name === match.name && i.unit === match.unit));
+      }
     }
+  });
 
-    saveDataToLocalStorage();
-    renderTonKhoTab(taxCode, 'main');
-    renderExportGoodsTab(taxCode);
-    renderCustomerTab(taxCode);
-    renderExportHistoryTable(taxCode);
-    alert('✅ Đã xuất hàng và cập nhật kho, khách hàng.');
+  hkd.exports = hkd.exports || [];
+  hkd.exports.push({
+    date: timestamp,
+    customer: customerInfo,
+    items: validItems.map(item => ({
+      name: item.name,
+      unit: item.unit,
+      qty: item.exportQty,
+      price: item.sellPrice,
+      amount: item.exportQty * item.sellPrice,
+      tax: 0
+    })),
+    total: Math.round(total),
+    isPaid: true,
+    profit: 0
+  });
+
+  if (!hkd.customers) hkd.customers = [];
+  const existed = hkd.customers.find(c =>
+    c.name === customerInfo.name &&
+    c.address === customerInfo.address &&
+    c.phone === customerInfo.phone
+  );
+
+  if (!existed) {
+    hkd.customers.push({
+      name: customerInfo.name || 'Khách lẻ',
+      address: customerInfo.address || 'Chưa rõ',
+      phone: customerInfo.phone || '',
+      taxCodeInput: customerInfo.mst || '',
+      type: customerInfo.type || 'ho_kinh_doanh',
+      history: [{
+        date: timestamp,
+        items: validItems.map(item => ({
+          name: item.name,
+          unit: item.unit,
+          qty: item.exportQty,
+          price: item.sellPrice,
+          amount: item.exportQty * item.sellPrice,
+          tax: 0
+        })),
+        total: Math.round(total),
+        isPaid: true
+      }]
+    });
+  } else {
+    existed.history = existed.history || [];
+    existed.history.push({
+      date: timestamp,
+      items: validItems.map(item => ({
+        name: item.name,
+        unit: item.unit,
+        qty: item.exportQty,
+        price: item.sellPrice,
+        amount: item.exportQty * item.sellPrice,
+        tax: 0
+      })),
+      total: Math.round(total),
+      isPaid: true
+    });
+  }
+
+  saveDataToLocalStorage();
+  renderTonKhoTab(taxCode, 'main');
+  renderExportGoodsTab(taxCode);
+  renderCustomerTab(taxCode);
+  renderExportHistoryTable(taxCode);
+  showToast('✅ Đã xuất hàng và cập nhật kho, khách hàng.', 3000, 'success');
 }
+function updateSingleExportRow(taxCode, index) {
+  const list = hkdData[taxCode]?.tempExportList;
+  if (!list || !list[index]) return;
 
+  const item = list[index];
+  const qty = parseFloat(item.exportQty) || 0;
+  const lineTotal = qty * parseFloat(item.sellPrice || 0);
 
+  const row = document.querySelector(`#${taxCode}-exportGoodsTable tr:nth-child(${index + 2})`);
+  if (row) {
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${item.name}</td>
+      <td>${item.unit}</td>
+      <td>${item.quantity}</td>
+      <td><input type="number" value="${qty}" onchange="updateExportQty('${taxCode}', ${index}, this.value)" style="width:60px"></td>
+      <td><input type="number" value="${item.sellPrice}" onchange="updateSellPrice('${taxCode}', ${index}, this.value)" style="width:80px"></td>
+      <td>${lineTotal.toLocaleString()} đ</td>
+    `;
+  }
+
+  // Cập nhật tổng
+  const total = list.reduce((sum, item) => sum + (parseFloat(item.exportQty || 0) * parseFloat(item.sellPrice || 0)), 0);
+  const totalElement = document.querySelector(`#${taxCode}-exportGoodsTable div:last-child`);
+  if (totalElement) {
+    totalElement.innerHTML = `<b>💰 Tổng cộng:</b> ${total.toLocaleString()} đ`;
+  }
+}
+/*
 // ✅ Hiển thị lịch sử xuất hàng
 function renderExportHistoryTable(taxCode) {
   const container = document.getElementById(`${taxCode}-lichsu`);
@@ -518,7 +580,7 @@ function renderExportHistoryTable(taxCode) {
 }
 
 
-
+*/
 function renderExportGoodsTable(taxCode, list) {
   const container = document.getElementById(`${taxCode}-exportGoodsTable`);
   if (!container) return;
@@ -565,18 +627,42 @@ function renderExportGoodsTable(taxCode, list) {
   container.innerHTML = html;
 }
 
-function updateSellPrice(taxCode, index, value) {
-  const list = hkdData[taxCode]?.tempExportList;
-  if (!list || !list[index]) return;
+function updateExportQty(taxCode, index, newQty) {
+  const hkd = hkdData[taxCode];
+  if (!hkd || !hkd.tempExportList) return;
 
+  index = parseInt(index);
+  newQty = parseInt(newQty);
+  if (isNaN(index) || isNaN(newQty) || newQty < 0) return;
+
+  const list = hkd.tempExportList;
+  const item = list[index];
+  if (!item) return;
+
+  const stockItem = (hkd.tonkhoMain || []).find(i => i.name === item.name && i.unit === item.unit);
+  const maxQty = stockItem ? parseFloat(stockItem.quantity) : 0;
+
+  item.exportQty = Math.min(newQty, maxQty);
+  updateSingleExportRow(taxCode, index);
+}
+
+function updateSellPrice(taxCode, index, value) {
+  const hkd = hkdData[taxCode];
+  if (!hkd || !hkd.tempExportList) return;
+
+  index = parseInt(index);
   const price = parseFloat(value) || 0;
-  if (price < 0) {
+  if (isNaN(index) || price < 0) {
     showToast('❌ Giá bán phải là số không âm', 3000, 'error');
-    list[index].sellPrice = 0;
-  } else {
-    list[index].sellPrice = price;
+    return;
   }
-  renderExportGoodsTable(taxCode, list);
+
+  const list = hkd.tempExportList;
+  const item = list[index];
+  if (!item) return;
+
+  item.sellPrice = price;
+  updateSingleExportRow(taxCode, index);
 }
 
 
