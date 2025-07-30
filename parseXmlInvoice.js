@@ -67,7 +67,7 @@ function parseXmlInvoice(xmlContent) {
     const xmlThTien = parseFloat(getText('ThTien', node) || '0');
 
     // ✅ Chuẩn hóa thuế suất
-    const taxRateText = getText('TSuat', node).trim(); // giữ lại để hiển thị
+    const taxRateText = getText('TSuat', node).trim();
     const rawTax = taxRateText.toLowerCase().replace('%', '');
     let taxRate = 0;
     if (rawTax === 'kct' || rawTax === 'không chịu thuế' || rawTax === '') {
@@ -81,23 +81,24 @@ function parseXmlInvoice(xmlContent) {
       amount = xmlThTien;
     }
 
-    // Phân loại
+    // ✅ Phân loại sản phẩm
     let category = 'KM';
     const lowerName = name.toLowerCase();
     const isCKText = lowerName.includes('chiết khấu') || lowerName.includes('ck');
-    const isChietKhau = (quantity === 0 && tchat === 3 && amount < 0) ||
-                        (quantity === 0 && tchat === 3 && amount > 0 && isCKText);
+    const isCKTMKeyword = lowerName.includes('cktm');
+    const isCKTMByAmount = (quantity === 0 && tchat === 3 && amount !== 0);
+    const isChietKhau = isCKTMByAmount || isCKText || isCKTMKeyword;
 
     if (quantity === 0 && amount === 0) {
       category = 'KM';
-    } else if (isChietKhau) {
+    } else if (tchat === 3 && isChietKhau) {
       category = 'chiet_khau';
     } else if (quantity > 0 && amount > 0) {
       category = 'hang_hoa';
     }
 
     if (category === 'chiet_khau' && amount > 0) {
-      amount = -Math.abs(amount);
+      amount = -Math.abs(amount); // chuẩn hóa về số âm
     }
 
     totalManual += amount;
@@ -112,8 +113,8 @@ function parseXmlInvoice(xmlContent) {
       price: price.toString(),
       discount: discount.toString(),
       amount,
-      taxRate,       // kiểu number dùng để tính toán
-      taxRateText,   // giữ chuỗi nếu muốn hiển thị gốc
+      taxRate,
+      taxRateText,
       category,
       tchat,
       __diff: Math.abs(amount - xmlThTien) >= 1,

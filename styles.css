@@ -3,35 +3,6 @@ body {
   margin: 0;
   background: #f8f9fa;
 }
-.popup-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.3);
-  z-index: 1000;
-}
-
-.popup {
-  position: fixed;
-  top: 10%;
-  left: 50%;
-  transform: translateX(-50%);
-  background: white;
-  border: 1px solid #ccc;
-  z-index: 1001;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 20px;
-  width: 900px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.2);
-}
-
-.popup-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
-}
 
 .container {
   display: flex;
@@ -210,4 +181,30 @@ body {
   border: none;
   cursor: pointer;
   font-size: 16px;
+}
+
+.popup-content {
+  display: flex;
+  gap: 16px;
+  max-height: 90vh;
+  overflow: hidden;
+}
+
+.popup-left {
+  flex: 1;
+  min-width: 50%;
+  overflow: hidden;
+}
+
+.popup-left iframe {
+  width: 100%;
+  height: 85vh;
+  border: none;
+}
+
+.popup-right {
+  flex: 1;
+  max-width: 50%;
+  overflow-y: auto;
+  font-size: 14px;
 }
