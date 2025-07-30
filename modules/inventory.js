@@ -70,23 +70,24 @@ function renderTonKhoTab(taxCode, type) {
     </div>`;
   }
 
- // Trong hàm renderTonKhoTab, sửa phần hiển thị mã sản phẩm
-html += `
+  html += `
     <table border="1" cellpadding="6" cellspacing="0" style="margin-top:10px; width:100%; background:#fff;">
       <thead><tr>
-        <th>STT</th><th>Mã SP</th><th>Tên</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th><th>Thuế</th><th>TTST</th><th>Thao tác</th>
+        <th>STT</th><th>Mã SP</th><th>Tên</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>CK</th><th>Thành tiền</th><th>Thuế</th><th>TTST</th><th>Thao tác</th>
       </tr></thead><tbody>`;
 
-arr.forEach((item, i) => {
+  arr.forEach((item, i) => {
     const isEditing = (tonkhoEditing.index === i && tonkhoEditing.type === type && tonkhoEditing.taxCode === taxCode);
     const quantity = parseFloat(item.quantity) || 0;
     const price = parseFloat(item.price) || 0;
-    const amount = quantity * price;
     const taxRate = parseFloat(item.taxRate) || 0;
+    const discount = parseFloat(item.discount || item.lineDiscount || 0); // ✅ fix CK
+    const amount = quantity * price - discount;
     const taxAmount = amount * (taxRate / 100);
     const afterTax = amount + taxAmount;
 
     html += `<tr><td>${i + 1}</td>`;
+
     if (isEditing) {
       html += `
         <td><input value="${item.productCode || ''}" id="edit-code-${i}" style="width:100%"></td>
@@ -108,18 +109,24 @@ arr.forEach((item, i) => {
         <td>${item.unit}</td>
         <td>${item.quantity}</td>
         <td>${item.price}</td>
-        <td>${(parseFloat(item.amount) || 0).toLocaleString()}</td>
+        <td>${
+          item.category === 'chiet_khau'
+            ? Math.abs(parseFloat(item.amount || 0)).toLocaleString()
+            : discount.toLocaleString()
+        }</td>
+        <td>${amount.toLocaleString()}</td>
         <td>${item.taxRate}</td>
         <td>${Math.round(afterTax).toLocaleString()}</td>
         <td>
           <button onclick="createTonKhoItem('${taxCode}', '${type}')">➕</button>
-          <button onclick="startEditProduct('${taxCode}', '${type}', ${i})">✏️</button>
+          <button onclick="startEditProduct('${taxCode}', '${type}', ${i})"✏️</button>
           <button onclick="deleteTonKhoItem('${taxCode}', '${type}', ${i})">❌</button>
           <button onclick="moveTonKhoItemPrompt('${taxCode}', '${type}', ${i})">🔁</button>
         </td>`;
     }
+
     html += `</tr>`;
-});
+  });
 
   html += `</tbody></table>`;
 
@@ -145,6 +152,7 @@ arr.forEach((item, i) => {
     if (el) el.style.display = (k === type ? 'block' : 'none');
   });
 }
+
 
 // Hàm mới để xử lý prompt di chuyển
 function moveTonKhoItemPrompt(taxCode, fromType, index) {

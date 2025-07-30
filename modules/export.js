@@ -1,12 +1,16 @@
-// Mở popup xuất Excel
+// export.js
 function openExportPopup(taxCode) {
   currentTaxCode = taxCode;
-  const hkd = hkdData[taxCode];
+  const hkd = window.hkdData && window.hkdData[taxCode];
+  if (!hkd) {
+    console.error('Không tìm thấy dữ liệu HKD');
+    return;
+  }
 
-  exportInventoryData = [
-    ...hkd.tonkhoMain.map(p => ({ ...p, kho: "Hàng hóa" })),
-    ...hkd.tonkhoKM.map(p => ({ ...p, kho: "Khuyến mại" })),
-    ...hkd.tonkhoCK.map(p => ({ ...p, kho: "Chiết khấu" })),
+  const exportInventoryData = [
+    ...(hkd.tonkhoMain || []).map(p => ({ ...p, kho: "Hàng hóa" })),
+    ...(hkd.tonkhoKM || []).map(p => ({ ...p, kho: "Khuyến mại" })),
+    ...(hkd.tonkhoCK || []).map(p => ({ ...p, kho: "Chiết khấu" })),
   ];
 
   let html = `<table border="1" cellpadding="4" style="width:100%"><thead><tr>
