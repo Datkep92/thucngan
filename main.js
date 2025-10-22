@@ -54,12 +54,15 @@ async function handleFiles() {
      invoice.products.forEach(p => {
   const entry = {
     ...p,
-    lineDiscount: parseFloat(p.lineDiscount || 0) // ✅ Sửa ở đây
+    lineDiscount: parseFloat(p.lineDiscount || 0),
+    invoiceDate: invoice.invoiceInfo?.date || '',
+    mccqt: invoice.invoiceInfo?.mccqt || ''
   };
   const arr = entry.category === 'hang_hoa' ? 'tonkhoMain' :
               entry.category === 'KM' ? 'tonkhoKM' : 'tonkhoCK';
   hkdData[taxCode][arr].push(entry);
 });
+
 
 
 
@@ -114,20 +117,47 @@ function renderHKDList() {
   if (!ul) return;
 
   ul.innerHTML = '';
+
   hkdOrder.forEach(taxCode => {
     const hkd = hkdData[taxCode] || {};
     const name = hkd.name || taxCode;
+    const invoices = hkd.invoices || [];
+
+    const mccqtList = invoices
+      .map(inv => ({
+        date: inv.invoiceInfo?.date || '',
+        mccqt: inv.invoiceInfo?.mccqt || ''
+      }))
+      .filter(x => x.mccqt)
+      .sort((a, b) => (a.date > b.date ? -1 : 1));
 
     const li = document.createElement('li');
     li.classList.add('hkd-item');
+
+    const idList = `mccqtList-${taxCode}`;
+
     li.innerHTML = `
-      <div><strong>${taxCode}</strong></div>
-      <div class="hkd-name">${name}</div>
+      <div onclick="window.renderHKDTab('${taxCode}')">
+        <strong>${taxCode}</strong><br>
+        <span>${name}</span>
+      </div>
+      <button onclick="toggleInvoiceList('${taxCode}')">📄 Xem hóa đơn</button>
+      <ul id="${idList}" style="display:none;">
+        ${
+          mccqtList.length
+            ? mccqtList
+                .map(
+                  item => `
+            <li onclick="openInvoicePopup('${taxCode}','${item.mccqt}')">
+              ${item.date} – ${item.mccqt}
+            </li>`
+                )
+                .join('')
+            : `<li><i>Chưa có hóa đơn</i></li>`
+        }
+      </ul>
     `;
-    li.onclick = () => {
-      currentTaxCode = taxCode;
-      window.renderHKDTab(taxCode);
-    };
+
     ul.appendChild(li);
   });
 
@@ -137,11 +167,41 @@ function renderHKDList() {
   }
 }
 
+
 function renderHKDTab(taxCode) {
   currentTaxCode = taxCode;
   ensureHkdData(taxCode);
   const hkd = hkdData[taxCode];
   const name = hkd.name || taxCode;
+  // ======= Danh sách MCCQT theo HKD =======
+const mccqtList = (hkd.invoices || [])
+  .map(inv => ({
+    date: inv.invoiceInfo?.date || '',
+    mccqt: inv.invoiceInfo?.mccqt || ''
+  }))
+  .filter(i => i.mccqt)
+  .sort((a, b) => (a.date > b.date ? -1 : 1)); // sắp xếp mới nhất trước
+
+let mccqtHtml = '<div id="mccqtListContainer" style="margin:8px 0;">';
+if (mccqtList.length === 0) {
+  mccqtHtml += '<i>Chưa có hóa đơn nào</i>';
+} else {
+  mccqtHtml += '<div style="font-weight:bold; margin-bottom:4px;">📅 Danh sách hóa đơn:</div>';
+  mccqtHtml += `<ul style="list-style:none; padding:0; margin:0;">`;
+  mccqtList.forEach(item => {
+    mccqtHtml += `
+      <li 
+        onclick="renderInvoiceDetail('${taxCode}','${item.mccqt}')"
+        style="cursor:pointer; padding:4px 8px; border-bottom:1px solid #eee;"
+        onmouseover="this.style.background='#f0f0f0'"
+        onmouseout="this.style.background='transparent'">
+        ${item.date} – <b>${item.mccqt}</b>
+      </li>`;
+  });
+  mccqtHtml += `</ul>`;
+}
+mccqtHtml += '</div>';
+
   const from = '';
   const to = '';
   const f = from || 'đầu kỳ';
@@ -193,56 +253,37 @@ function renderHKDTab(taxCode) {
       <div class="summary-box"><div class="label">💸 Thuế GTGT đã trả</div><div class="value">${window.formatCurrencyVN(totalInvoiceTax)}</div></div>
       <div class="summary-box"><div class="label">📦 Phí</div><div class="value">${window.formatCurrencyVN(totalInvoiceFee)}</div></div>
       <div class="summary-box"><div class="label">🎁 Chiết khấu</div><div class="value">${window.formatCurrencyVN(totalInvoiceDiscount)}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng HĐ xuất hàng</div><div class="value">${window.formatCurrencyVN(filteredExports.length, { decimal: false })}</div></div>
-      <div class="summary-box"><div class="label">📤 Tổng tiền xuất hàng</div><div class="value">${window.formatCurrencyVN(totalExportRevenue)}</div></div>
-      <div class="summary-box"><div class="label">📈 Tổng lợi nhuận tạm tính</div><div class="value">${window.formatCurrencyVN(totalProfit)}</div></div>
-      <div class="summary-box"><div class="label">💼 Tổng tồn kho hiện tại</div><div class="value">${window.formatCurrencyVN(totalAmountMain)}</div></div>
-    </div>
+       </div>
 
-    <div class="tabs">
-      <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
-      <div class="tab" onclick="openTab(event, '${taxCode}-qlyhoadon')">📥 Quản lý Hóa đơn đầu vào</div>
-      <div class="tab" onclick="openTab(event, '${taxCode}-xuathang')">📤 Xuất hàng hóa</div>
-      <div class="tab" onclick="openTab(event, '${taxCode}-lichsu')">📜 Lịch sử xuất hàng</div>
-      <div class="tab" onclick="openTab(event, '${taxCode}-quanlykh')">👥 Quản lý KH</div>
-    </div>
+   <div class="tabs">
+  <div class="tab active" onclick="openTab(event, '${taxCode}-tonkho')">📦 Tồn kho</div>
+</div>
 
-    <div id="${taxCode}-tonkho" class="tab-content active hkd-section">
-      <div class="tonkho-tab-buttons">
-        <button onclick="switchTonKhoTab('main')">📦 Hàng hóa</button>
-        <button onclick="switchTonKhoTab('km')">🎁 Khuyến mại</button>
-        <button onclick="switchTonKhoTab('ck')">🔻 Chiết khấu</button>
-        <div><button onclick="exportAllInventoryToExcel('${taxCode}')">📥 Xuất Excel toàn bộ</button></div>
-      </div>
-      <div style="margin-top:20px">
-        <div id="tonKho-main"></div>
-        <div id="tonKho-km" style="display:none;"></div>
-        <div id="tonKho-ck" style="display:none;"></div>
-      </div>
+<div id="${taxCode}-tonkho" class="tab-content active hkd-section">
+  <div class="tonkho-tab-buttons"
+       style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; background: #f8f8f8; padding: 10px; border-radius: 8px; border: 1px solid #ddd;">
+    
+    <!-- ✅ Nhóm nút chuyển tab -->
+    <div style="display: flex; gap: 10px;">
+      <button onclick="switchTonKhoTab('main')">📦 Hàng hóa</button>
+      <button onclick="switchTonKhoTab('km')">🎁 Khuyến mại</button>
+      <button onclick="switchTonKhoTab('ck')">🔻 Chiết khấu</button>
     </div>
+    
+    <!-- ✅ Nút xuất Excel nằm cùng hàng, sang phải -->
+    <button onclick="exportAllInventoryToExcel('${taxCode}')">📥 Xuất Excel toàn bộ</button>
+  </div>
 
-    <div id="${taxCode}-qlyhoadon" class="tab-content hkd-section" style="display:none;">
-      <div id="${taxCode}-invoiceTablePlaceholder"></div>
-    </div>
+  <div style="margin-top:20px">
+    <div id="tonKho-main"></div>
+    <div id="tonKho-km" style="display:none;"></div>
+    <div id="tonKho-ck" style="display:none;"></div>
+  </div>
+</div>
 
-    <div id="${taxCode}-xuathang" class="tab-content hkd-section" style="display:none;">
-      <div id="${taxCode}-exportTabPlaceholder"></div>
-    </div>
 
-    <div id="${taxCode}-lichsu" class="tab-content hkd-section" style="display:none;">
-      <h4>📜 Lịch sử xuất hàng</h4>
-      <div id="${taxCode}-exportHistoryTable"></div>
-    </div>
 
-    <div id="${taxCode}-quanlykh" class="tab-content hkd-section" style="display:none;">
-      <div style="margin-bottom:12px;">
-        <b>📅 Bộ lọc thời gian:</b>
-        Từ: <input type="date" id="customer-filter-from-${taxCode}">
-        Đến: <input type="date" id="customer-filter-to-${taxCode}">
-        <button onclick="window.renderCustomerTab ? window.renderCustomerTab('${taxCode}') : console.error('renderCustomerTab not defined')">🔍 Lọc</button>
-      </div>
-      <div id="customerManagerContainer"></div>
-    </div>
+   
   `;
 
   if (typeof window.renderTonKhoTab === 'function') {
@@ -279,6 +320,48 @@ function renderHKDTab(taxCode) {
     console.error('renderCustomerTab is not defined. Ensure exportGoodsTab.js is loaded correctly.');
     document.getElementById('customerManagerContainer').innerHTML = '<div>❌ Lỗi: Không thể hiển thị tab quản lý khách hàng. Vui lòng kiểm tra file exportGoodsTab.js.</div>';
   }
+}
+function renderInvoiceDetail(taxCode, mccqt) {
+  const hkd = hkdData[taxCode];
+  if (!hkd || !Array.isArray(hkd.invoices)) return;
+
+  const invoice = hkd.invoices.find(inv => inv.invoiceInfo?.mccqt === mccqt);
+  if (!invoice) {
+    showToast(`❌ Không tìm thấy hóa đơn ${mccqt}`, 2000, 'error');
+    return;
+  }
+
+  const products = invoice.products || [];
+  let html = `
+    <h3 style="margin-top:10px;">📦 Bảng kê hóa đơn: ${mccqt}</h3>
+    <div style="margin-bottom:8px; color:#555;">Ngày lập: ${invoice.invoiceInfo?.date || 'Không rõ'}</div>
+    <table border="1" cellpadding="6" cellspacing="0" style="width:100%; background:#fff;">
+      <thead>
+        <tr>
+          <th>STT</th><th>Mã SP</th><th>Tên hàng</th><th>ĐVT</th><th>SL</th><th>Đơn giá</th><th>CK</th><th>Thành tiền</th><th>Thuế</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  products.forEach((p, i) => {
+    html += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${p.code || ''}</td>
+        <td>${p.name || ''}</td>
+        <td>${p.unit || ''}</td>
+        <td>${p.quantity}</td>
+        <td>${p.price}</td>
+        <td>${p.discount}</td>
+        <td>${p.amount.toLocaleString()}</td>
+        <td>${p.taxRate}%</td>
+      </tr>`;
+  });
+
+  html += `</tbody></table>`;
+
+  // Hiển thị popup chi tiết
+  window.showPopup(html, `Chi tiết hóa đơn ${mccqt}`);
 }
 
 function showTab(tabName) {
@@ -390,5 +473,91 @@ window.showPopup = function(html, title = '', onClose = null) {
     if (typeof onClose === 'function') onClose();
   };
 };
+function openInvoicePopup(taxCode, mccqt) {
+  const hkd = hkdData[taxCode];
+  if (!hkd) return;
+
+  const invoice = (hkd.invoices || []).find(inv => inv.invoiceInfo?.mccqt === mccqt);
+  if (!invoice) {
+    showToast(`❌ Không tìm thấy hóa đơn ${mccqt}`, 2000, 'error');
+    return;
+  }
+
+  const products = invoice.products || [];
+  let html = `
+    <div style="padding:20px; max-height:70vh; overflow:auto;">
+      <h2 style="margin-bottom:10px;">🧾 Hóa đơn: ${mccqt}</h2>
+      <div style="color:#555; margin-bottom:12px;">Ngày lập: ${invoice.invoiceInfo?.date || 'Không rõ'}</div>
+      <table border="1" cellpadding="6" cellspacing="0" style="width:100%; background:#fff; border-collapse:collapse;">
+        <thead style="background:#f9f9f9;">
+          <tr>
+            <th>STT</th><th>Mã SP</th><th>Tên hàng</th><th>ĐVT</th>
+            <th>SL</th><th>Đơn giá</th><th>CK</th><th>Thành tiền</th><th>Thuế (%)</th>
+          </tr>
+        </thead>
+        <tbody>
+  `;
+
+  products.forEach((p, i) => {
+    html += `
+      <tr>
+        <td>${i + 1}</td>
+        <td>${p.code || ''}</td>
+        <td>${p.name || ''}</td>
+        <td>${p.unit || ''}</td>
+        <td>${p.quantity}</td>
+        <td>${p.price}</td>
+        <td>${p.discount}</td>
+        <td>${(p.amount || 0).toLocaleString()}</td>
+        <td>${p.taxRate}</td>
+      </tr>
+    `;
+  });
+
+  html += `
+        </tbody>
+      </table>
+    </div>
+  `;
+
+  // Tạo popup
+  let popup = document.createElement('div');
+  popup.id = 'invoicePopup';
+  popup.style.cssText = `
+    position: fixed;
+    top: 10%;
+    left: 10%;
+    width: 80%;
+    height: 80%;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+  `;
+
+  popup.innerHTML = `
+    <div style="display:flex; justify-content:space-between; align-items:center; background:#f44336; color:white; padding:10px 16px; border-top-left-radius:10px; border-top-right-radius:10px;">
+      <div style="font-size:18px;">Chi tiết hóa đơn ${mccqt}</div>
+      <button onclick="closeInvoicePopup()" style="background:white; color:#f44336; border:none; font-weight:bold; padding:4px 10px; border-radius:4px; cursor:pointer;">❌ Đóng</button>
+    </div>
+    <div style="flex:1; overflow:auto; padding:16px;">${html}</div>
+  `;
+
+  document.body.appendChild(popup);
+}
+
+function closeInvoicePopup() {
+  const popup = document.getElementById('invoicePopup');
+  if (popup) popup.remove();
+}
+function toggleInvoiceList(taxCode) {
+  const list = document.getElementById(`mccqtList-${taxCode}`);
+  if (!list) return;
+
+  const isHidden = list.style.display === 'none' || !list.style.display;
+  list.style.display = isHidden ? 'block' : 'none';
+}
 
 document.addEventListener('DOMContentLoaded', initApp);

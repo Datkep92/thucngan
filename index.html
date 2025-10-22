@@ -23,15 +23,7 @@
     <button onclick="document.getElementById('zipFile').click()">📁 Chọn file</button>
     <input type="file" id="zipFile" accept=".zip" multiple style="display:none;">
     <button onclick="clearAll()">🗑️ Xoá toàn bộ</button>
-    <button onclick="showLogHistory()">📝 Xem lỗi gần đây</button>
-    <button onclick="undoAction()">🔁 Undo</button>
-    <button onclick="searchHKD()">🔍 Tìm kiếm</button>
-    <button onclick="showGitHubTokenPopup()">🔐 Nhập GitHub Token</button>
-    <input id="tokenInput" placeholder="Nhập GitHub token..." />
-    <button onclick="saveGitHubToken()">💾 Lưu token</button>
-    <button onclick="gitbu()" style="padding: 8px 16px; background-color: #dc3545; color: white; border: none; border-radius: 6px; cursor: pointer;">
-      🗑️ Xóa tất cả file trên GitHub
-    </button>
+   
   </header>
 
   <!-- ==== BODY CONTENT ==== -->
@@ -50,97 +42,6 @@
     </div>
   </div>
 
-  <!-- ✅ POPUP: LỊCH SỬ KHÁCH HÀNG -->
-<div id="customer-history-popup"
-     style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
-     background:white; border:2px solid #007bff; box-shadow:0 4px 20px rgba(0,0,0,0.3);
-     padding:20px; max-width:600px; width:90%; z-index:10000;">
-  <div id="customer-history-content"></div>
-  <div style="text-align:right; margin-top:10px;">
-    <button onclick="closeCustomerHistoryPopup()">Đóng</button>
-  </div>
-</div>
-
-
-  <!-- ✅ POPUP: XUẤT HÀNG -->
-  <div id="export-popup" style="display:none;">
-  <div class="popup-overlay" onclick="closeExportPopup()"></div>
-  <div class="popup-content">
-    <div class="popup-header">
-      <strong id="export-popup-title">📤 Xuất hàng</strong>
-      <button onclick="closeExportPopup()">✖️</button>
-    </div>
-    <div id="export-popup-content" class="popup-body"></div>
-    <div class="popup-footer">
-      <button onclick="submitExportFromPopup()">✅ Xuất hàng</button>
-      <button onclick="closeExportPopup()">❌ Đóng</button>
-    </div>
-  </div>
-</div>
-
-<div id="customer-detail-popup" style="display:none;">
-  <div class="popup-overlay" onclick="closeCustomerDetailPopup()"></div>
-  <div class="popup-content">
-    <div class="popup-header">
-      <strong>👤 Chi tiết khách hàng</strong>
-      <button onclick="closeCustomerDetailPopup()">✖️</button>
-    </div>
-    <div id="customer-detail-content" class="popup-body"></div>
-  </div>
-</div>
-
-<div id="customer-history-popup" style="display:none;">
-  <div class="popup-overlay" onclick="closeCustomerHistoryPopup()"></div>
-  <div class="popup-content">
-    <div class="popup-header">
-      <strong>🕓 Lịch sử giao dịch</strong>
-      <button onclick="closeCustomerHistoryPopup()">✖️</button>
-    </div>
-    <div id="customer-history-content" class="popup-body"></div>
-  </div>
-</div>
-
- <!-- ✅ POPUP: CHI TIẾT KHÁCH HÀNG -->
-<div id="customer-detail-popup" style="display:none; position:fixed; top:5%; left:50%; transform:translateX(-50%);
-  background:white; border:2px solid #007bff; padding:20px; max-width:1000px; width:95%; z-index:9999;
-  box-shadow:0 4px 12px rgba(0,0,0,0.2); overflow-y:auto; max-height:90vh">
-
-  <h2>👤 Chi tiết khách hàng</h2>
-  <div id="customer-summary"></div>
-
-  <hr>
-  <h3>📊 Bộ lọc hóa đơn</h3>
-  <div style="margin-bottom:10px">
-    <label><input type="radio" name="invoice-filter" value="all" checked> Tất cả</label>
-    <label><input type="radio" name="invoice-filter" value="paid"> Đã thanh toán</label>
-    <label><input type="radio" name="invoice-filter" value="unpaid"> Còn nợ</label>
-    Từ: <input type="date" id="filter-from-date">
-    Đến: <input type="date" id="filter-to-date">
-    <input type="text" id="filter-keyword" placeholder="Tìm theo hàng hóa...">
-    <button onclick="filterCustomerInvoices()">🔍 Lọc</button>
-  </div>
-
-  <h3>📦 Hàng hóa đã mua</h3>
-  <div id="customer-goods-summary"></div>
-
-  <hr>
-  <h3>📤 Xuất hàng tiếp cho KH</h3>
-  <div id="customer-export-area"></div>
-
-  <hr>
-  <h3>🧾 Lịch sử giao dịch</h3>
-  <div id="customer-history-list"></div>
-
-  <div style="text-align:right; margin-top:15px;">
-    <button onclick="closeCustomerDetailPopup()">Đóng</button>
-  </div>
-<div id="mainContent">
-  <div id="hkdInfo">📌 Chưa chọn HKD nào</div>
-  
-  <!-- 🔻 Thêm dòng này để JS render tab Khách hàng -->
-  <div id="customerManagerContainer" style="margin-top: 20px;"></div>
-</div>
-</div>
 
 
   <!-- ==== SCRIPT CHẠY SAU ==== -->
@@ -195,13 +96,11 @@
   <script src="state.js"></script>
   <script src="dom-utils.js"></script>
   <script src="parseXmlInvoice.js"></script>
-  <script src="modules/inventory.js"></script>
+  <script src="inventory.js"></script>
   
-  <script src="modules/invoiceTab.js"></script>
-  <script src="modules/exportGoodsTab.js"></script>
-  <script src="modules/customerManager.js"></script>
-<script src="modules/export.js"></script>
-  <script src="modules/commonUtils.js"></script>
+  
+<script src="export.js"></script>
+  <script src="commonUtils.js"></script>
 
   <script src="main.js"></script>
 
