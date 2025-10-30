@@ -140,3 +140,72 @@ function parseXmlInvoice(xmlContent) {
 
   return { invoiceInfo, sellerInfo, buyerInfo, products, totals };
 }
+// parseXmlInvoice.js – GIỮ NGUYÊN LOGIC TÌM XML TRONG ZIP
+
+async function extractInvoiceFromZip(file) {
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const xmlFiles = Object.keys(zip.files).filter(name => name.toLowerCase().endsWith('.xml'));
+    
+    if (xmlFiles.length === 0) {
+      window.showToast(`Không tìm thấy file XML trong: ${file.name}`, 'error');
+      return null;
+    }
+
+    const xmlText = await zip.file(xmlFiles[0]).async('text');
+    const parser = new DOMParser();
+    const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
+
+    if (xmlDoc.querySelector('parsererror')) {
+      throw new Error('XML không hợp lệ');
+    }
+
+    const getText = (selector) => {
+      const node = xmlDoc.querySelector(selector);
+      return node ? node.textContent.trim() : '';
+    };
+
+    const products = Array.from(xmlDoc.querySelectorAll('DSHDon > HHDVu')).map(row => {
+      const name = getText('THang') || getText('Ten');
+      const qty = parseFloat(getText('SLuong')) || 0;
+      const price = parseFloat(getText('DGia')) || 0;
+      const amount = parseFloat(getText('ThTien')) || 0;
+      const unit = getText('DVTinh') || 'Cái';
+      const category = getText('LHHoa')?.toLowerCase().includes('km') ? 'KM' : 'hang_hoa';
+
+      return { name, quantity: qty, price, amount, unit, category, lineDiscount: 0 };
+    }).filter(p => p.quantity > 0);
+
+    if (products.length === 0) {
+      window.showToast(`Không có sản phẩm trong: ${file.name}`, 'info');
+      return null;
+    }
+
+    const invoice = {
+      invoiceInfo: {
+        mccqt: getText('MCCQT') || getText('MaCQT'),
+        number: getText('SHDon'),
+        date: getText('NLap')
+      },
+      buyerInfo: {
+        name: getText('TenNMa'),
+        taxCode: getText('MSTNMa')
+      },
+      sellerInfo: {
+        name: getText('TenNBan'),
+        taxCode: getText('MSTNban')
+      },
+      products
+    };
+
+    return invoice;
+
+  } catch (err) {
+    console.error('Lỗi đọc ZIP:', err);
+    window.showToast(`Lỗi đọc ZIP: ${file.name}`, 'error');
+    return null;
+  }
+}
+
+// GÁN TOÀN CỤC
+window.extractInvoiceFromZip = extractInvoiceFromZip;

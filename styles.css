@@ -208,3 +208,101 @@ body {
   overflow-y: auto;
   font-size: 14px;
 }
+/* === DRAG & DROP MATCHING POPUP === */
+.match-popup {
+  width: 90%;
+  max-width: 1000px;
+  height: 80vh;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.match-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  padding: 16px;
+  gap: 16px;
+}
+
+.match-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.match-column h4 {
+  margin: 0 0 8px;
+  font-size: 1.1em;
+  color: #1976d2;
+  text-align: center;
+}
+
+.match-list {
+  flex: 1;
+  background: #f8f9fa;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  padding: 8px;
+  overflow-y: auto;
+  min-height: 200px;
+}
+
+.match-arrow {
+  align-self: center;
+  font-size: 2em;
+  color: #1976d2;
+  font-weight: bold;
+}
+
+.match-item {
+  padding: 10px;
+  margin: 6px 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s;
+  font-size: 0.95em;
+  position: relative;
+}
+
+.match-item:hover {
+  background: #e3f2fd;
+}
+
+.match-item.dragging {
+  opacity: 0.5;
+  background: #bbdefb;
+  transform: rotate(5deg);
+}
+
+.match-item.matched {
+  background: #ffebee !important;
+  border-color: #f44336;
+  color: #c62828;
+  font-weight: 600;
+}
+
+.match-item .qty {
+  font-weight: bold;
+  color: #d32f2f;
+}
+
+.match-item .source {
+  font-size: 0.8em;
+  color: #555;
+}
+#globalSearchInput {
+  transition: border 0.2s;
+}
+#globalSearchInput:focus {
+  outline: none;
+  border-color: #1976d2;
+  box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+}

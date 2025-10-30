@@ -38,6 +38,9 @@ function renderTonKhoTab(taxCode, type) {
     return true;
   });
 
+  // ==== Đếm số lượng tồn kho = 0 ====
+  const zeroStockCount = arr.filter(item => parseFloat(item.quantity) <= 0).length;
+
   // ==== Bộ lọc MCCQT + ngày ====
   const allMccqts = [
     ...new Set((hkdData[taxCode].invoices || []).map(inv => inv.invoiceInfo?.mccqt).filter(Boolean))
@@ -57,6 +60,11 @@ function renderTonKhoTab(taxCode, type) {
       </datalist>
       <button id="applyFilterBtn">Lọc</button>
       <button id="clearFilterBtn">Xóa lọc</button>
+      ${zeroStockCount > 0 ? `
+        <button id="deleteZeroStockBtn" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+          🗑️ Xóa ${zeroStockCount} tồn kho = 0
+        </button>
+      ` : ''}
     `;
     const container = document.getElementById(divMap[type]);
     if (container) container.insertAdjacentElement('beforebegin', filterDiv);
@@ -86,6 +94,13 @@ function renderTonKhoTab(taxCode, type) {
     document.getElementById('filterMccqt').value = '';
     renderTonKhoTab(taxCode, type);
   };
+
+  // Xóa tồn kho = 0
+  if (zeroStockCount > 0) {
+    document.getElementById('deleteZeroStockBtn').onclick = () => {
+      deleteZeroStock(taxCode, type);
+    };
+  }
 
   // ======= Hiển thị tổng & bảng mặc định =======
   const total = arr.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -125,7 +140,8 @@ function renderTonKhoTab(taxCode, type) {
     <thead>
       <tr>
         <th>STT</th><th>Mã SP</th><th>Tên</th><th>ĐVT</th><th>SL</th>
-        <th>Đơn giá</th><th>CK</th><th>Thành tiền</th><th>Thuế</th><th>TTST</th><th>Thao tác</th>
+        <th>Đơn giá</th><th>CK</th><th>Thành tiền</th><th>Thuế</th><th>TTST</th>
+        <th>Thao tác</th>
       </tr>
     </thead>
     <tbody>`;
@@ -139,7 +155,10 @@ function renderTonKhoTab(taxCode, type) {
     const amount = quantity * price - discount;
     const afterTax = amount + (amount * taxRate / 100);
 
-    html += `<tr><td>${i + 1}</td>`;
+    // Xác định style cho dòng tồn kho = 0
+    const rowStyle = quantity <= 0 ? 'background:#ffebee;' : '';
+
+    html += `<tr style="${rowStyle}"><td>${i + 1}</td>`;
 
     if (isEditing) {
       html += `
@@ -156,11 +175,14 @@ function renderTonKhoTab(taxCode, type) {
           <button onclick="cancelEditProduct()">⛔</button>
         </td>`;
     } else {
+      // Màu số lượng cho tồn kho = 0
+      const qtyColor = quantity <= 0 ? 'color:#f44336; font-weight:bold;' : '';
+      
       html += `
         <td>${item.productCode || 'N/A'}</td>
         <td>${item.name}</td>
         <td>${item.unit}</td>
-        <td>${item.quantity}</td>
+        <td style="${qtyColor}">${item.quantity}</td>
         <td>${item.price}</td>
         <td>${discount.toLocaleString()}</td>
         <td>${amount.toLocaleString()}</td>
@@ -169,7 +191,14 @@ function renderTonKhoTab(taxCode, type) {
         <td>
           <button onclick="createTonKhoItem('${taxCode}', '${type}')">➕</button>
           <button onclick="startEditProduct('${taxCode}', '${type}', ${i})">✏️</button>
-          <button onclick="deleteTonKhoItem('${taxCode}', '${type}', ${i})">❌</button>
+          ${quantity <= 0 ? `
+            <button onclick="deleteStockItem('${taxCode}', '${type}', ${i})" 
+                    style="background: #f44336; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer;">
+              🗑️
+            </button>
+          ` : `
+            <button onclick="deleteTonKhoItem('${taxCode}', '${type}', ${i})">❌</button>
+          `}
           <button onclick="moveTonKhoItemPrompt('${taxCode}', '${type}', ${i})">🔁</button>
         </td>`;
     }
@@ -193,8 +222,61 @@ function renderTonKhoTab(taxCode, type) {
   if (type === 'main' || type === 'ck') updateMainTotalDisplay(taxCode);
 }
 
+// Xóa tất cả tồn kho = 0 trong loại cụ thể
+function deleteZeroStock(taxCode, type) {
+  const hkd = hkdData[taxCode];
+  if (!hkd) return;
 
+  const map = { main: 'tonkhoMain', km: 'tonkhoKM', ck: 'tonkhoCK' };
+  const stockKey = map[type];
+  const items = hkd[stockKey] || [];
+  
+  // Lọc ra chỉ những items có số lượng > 0
+  const remainingItems = items.filter(item => parseFloat(item.quantity) > 0);
+  
+  const deletedCount = items.length - remainingItems.length;
+  
+  if (deletedCount > 0) {
+    hkd[stockKey] = remainingItems;
+    
+    window.saveDataToLocalStorage();
+    window.renderTonKhoTab(taxCode, type);
+    
+    window.showToast(`✅ Đã xóa ${deletedCount} tồn kho = 0`, 2000, 'success');
+  } else {
+    window.showToast('Không có tồn kho = 0 để xóa', 2000, 'info');
+  }
+}
 
+// Xóa từng dòng tồn kho = 0
+function deleteStockItem(taxCode, type, index) {
+  const hkd = hkdData[taxCode];
+  if (!hkd) return;
+
+  const map = { main: 'tonkhoMain', km: 'tonkhoKM', ck: 'tonkhoCK' };
+  const stockKey = map[type];
+  const items = hkd[stockKey] || [];
+  
+  if (index >= 0 && index < items.length) {
+    const itemName = items[index].name;
+    const quantity = parseFloat(items[index].quantity) || 0;
+    
+    if (quantity > 0) {
+      window.showToast('Chỉ có thể xóa tồn kho có số lượng = 0', 2000, 'warning');
+      return;
+    }
+    
+    // Xác nhận trước khi xóa
+    if (confirm(`Bạn có chắc muốn xóa "${itemName}" (SL = 0)?`)) {
+      items.splice(index, 1);
+      
+      window.saveDataToLocalStorage();
+      window.renderTonKhoTab(taxCode, type);
+      
+      window.showToast(`✅ Đã xóa "${itemName}"`, 2000, 'success');
+    }
+  }
+}
 function renderFilteredTonKhoTable(taxCode, type, filtered) {
   const divMap = { main: 'tonKho-main', km: 'tonKho-km', ck: 'tonKho-ck' };
   const spanMap = { main: 'total-tonkho-main', km: 'total-tonkho-km', ck: 'total-tonkho-ck' };
