@@ -306,3 +306,83 @@ body {
   border-color: #1976d2;
   box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
 }
+
+.match-item.dragging {
+  opacity: 0.6;
+  border: 2px dashed #42a5f5;
+}
+.match-item.drag-over {
+  background-color: #e3f2fd;
+  border: 2px solid #1976d2;
+}
+.match-item.pending-merge {
+  background-color: #fff9c4 !important; /* vàng nhạt */
+  border: 2px dashed #fbc02d !important;
+}
+.match-item.will-merge {
+  opacity: 0.6;
+}
+.match-item.merged {
+  background-color: #c8e6c9 !important; /* xanh nhạt */
+  transition: background-color 1s;
+}
+.match-item.pending-merge {
+  background-color: #fff8c4 !important;
+  border: 2px dashed #fbc02d !important;
+}
+.match-item.will-merge {
+  opacity: 0.7;
+}
+.match-item.merged {
+  background-color: #c8e6c9 !important;
+  transition: background-color 1s ease;
+}
+.match-item:hover { background:#f5f5f5; }
+button[onclick*="toggleExportDetail"] {
+  transition: all 0.2s;
+}
+/* ===== TÊN CÔNG TY DƯỚI TAB - ĐẸP & NỔI BẬT ===== */
+.company-header {
+  font-size: 1em;
+  font-weight: 600;
+  color: #1a5fb4;
+  background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+  padding: 10px 16px;
+  border-bottom: 1px solid #90caf9;
+  border-radius: 0 0 8px 8px;
+  text-align: center;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.company-header:hover {
+  background: linear-gradient(135deg, #bbdefb 0%, #90caf9 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.company-header .company-name {
+  font-weight: 700;
+  color: #0d47a1;
+}
+
+.company-header .tax-code {
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+  color: #1565c0;
+  background: rgba(255,255,255,0.7);
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid #90caf9;
+}
+
+/* Icon nhỏ bên trái (tùy chọn) */
+.company-header .icon {
+  width: 18px;
+  height: 18px;
+  fill: #1976d2;
+}

@@ -38,15 +38,12 @@ function renderTonKhoTab(taxCode, type) {
     return true;
   });
 
-  // ==== Đếm số lượng tồn kho = 0 ====
   const zeroStockCount = arr.filter(item => parseFloat(item.quantity) <= 0).length;
 
-  // ==== Bộ lọc MCCQT + ngày ====
   const allMccqts = [
     ...new Set((hkdData[taxCode].invoices || []).map(inv => inv.invoiceInfo?.mccqt).filter(Boolean))
   ];
 
-  // Chỉ tạo 1 lần
   if (!document.getElementById('tonkho-filters')) {
     const filterDiv = document.createElement('div');
     filterDiv.id = 'tonkho-filters';
@@ -62,7 +59,7 @@ function renderTonKhoTab(taxCode, type) {
       <button id="clearFilterBtn">Xóa lọc</button>
       ${zeroStockCount > 0 ? `
         <button id="deleteZeroStockBtn" style="background: #f44336; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
-          🗑️ Xóa ${zeroStockCount} tồn kho = 0
+          Xóa ${zeroStockCount} tồn kho = 0
         </button>
       ` : ''}
     `;
@@ -70,8 +67,7 @@ function renderTonKhoTab(taxCode, type) {
     if (container) container.insertAdjacentElement('beforebegin', filterDiv);
   }
 
-  // Xử lý lọc
-  document.getElementById('applyFilterBtn').onclick = () => {
+  document.getElementById('applyFilterBtn')?.addEventListener('click', () => {
     const from = document.getElementById('filterFrom').value;
     const to = document.getElementById('filterTo').value;
     const mccqt = document.getElementById('filterMccqt').value.trim().toUpperCase();
@@ -85,24 +81,21 @@ function renderTonKhoTab(taxCode, type) {
     });
 
     renderFilteredTonKhoTable(taxCode, type, filtered);
-  };
+  });
 
-  // Xóa lọc
-  document.getElementById('clearFilterBtn').onclick = () => {
+  document.getElementById('clearFilterBtn')?.addEventListener('click', () => {
     document.getElementById('filterFrom').value = '';
     document.getElementById('filterTo').value = '';
     document.getElementById('filterMccqt').value = '';
     renderTonKhoTab(taxCode, type);
-  };
+  });
 
-  // Xóa tồn kho = 0
   if (zeroStockCount > 0) {
-    document.getElementById('deleteZeroStockBtn').onclick = () => {
+    document.getElementById('deleteZeroStockBtn')?.addEventListener('click', () => {
       deleteZeroStock(taxCode, type);
-    };
+    });
   }
 
-  // ======= Hiển thị tổng & bảng mặc định =======
   const total = arr.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const tongHang = hkdData[taxCode].tonkhoMain.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
   const tongCK = hkdData[taxCode].tonkhoCK.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0);
@@ -118,20 +111,19 @@ function renderTonKhoTab(taxCode, type) {
   const thueSauCK = tongThue * tyLe;
   const thanhToanSauThue = tongSauCK + thueSauCK;
 
-  // ====== Hiển thị hàng ngang đẹp hơn ======
   let html = `
   <div style="margin-top:15px; font-weight:bold; display:flex; flex-wrap:wrap; gap:20px; align-items:center;">
-    <div>💰 Tổng hàng hóa: ${tongHang.toLocaleString()} đ</div>
-    <div>🎁 Tổng KM: ${hkdData[taxCode].tonkhoKM.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0).toLocaleString()} đ</div>
-    <div>🔻 Tổng CK: ${tongCK.toLocaleString()} đ</div>
+    <div> Tổng hàng hóa: ${tongHang.toLocaleString()} đ</div>
+    <div> Tổng KM: ${hkdData[taxCode].tonkhoKM.reduce((s, i) => s + (parseFloat(i.amount) || 0), 0).toLocaleString()} đ</div>
+    <div> Tổng CK: ${tongCK.toLocaleString()} đ</div>
   </div>`;
 
   if (type === 'main') {
     html += `
     <div style="margin-top:5px; font-weight:bold; color:#333; display:flex; flex-wrap:wrap; gap:15px;">
-      💡 Sau CK: ${tongSauCK.toLocaleString()} đ
-      💸 Thuế: ${Math.round(thueSauCK).toLocaleString()} đ
-      🧾 Thanh toán: ${Math.round(thanhToanSauThue).toLocaleString()} đ
+      Sau CK: ${tongSauCK.toLocaleString()} đ
+      Thuế: ${Math.round(thueSauCK).toLocaleString()} đ
+      Thanh toán: ${Math.round(thanhToanSauThue).toLocaleString()} đ
     </div>`;
   }
 
@@ -155,7 +147,6 @@ function renderTonKhoTab(taxCode, type) {
     const amount = quantity * price - discount;
     const afterTax = amount + (amount * taxRate / 100);
 
-    // Xác định style cho dòng tồn kho = 0
     const rowStyle = quantity <= 0 ? 'background:#ffebee;' : '';
 
     html += `<tr style="${rowStyle}"><td>${i + 1}</td>`;
@@ -171,13 +162,11 @@ function renderTonKhoTab(taxCode, type) {
         <td><input value="${item.taxRate}" id="edit-tax-${i}" style="width:60px"></td>
         <td>${Math.round(afterTax).toLocaleString()}</td>
         <td>
-          <button onclick="confirmEditProduct('${taxCode}', '${type}', ${i})">💾</button>
-          <button onclick="cancelEditProduct()">⛔</button>
+          <button onclick="confirmEditProduct('${taxCode}', '${type}', ${i})">Lưu</button>
+          <button onclick="cancelEditProduct()">Hủy</button>
         </td>`;
     } else {
-      // Màu số lượng cho tồn kho = 0
       const qtyColor = quantity <= 0 ? 'color:#f44336; font-weight:bold;' : '';
-      
       html += `
         <td>${item.productCode || 'N/A'}</td>
         <td>${item.name}</td>
@@ -189,17 +178,17 @@ function renderTonKhoTab(taxCode, type) {
         <td>${item.taxRate}</td>
         <td>${Math.round(afterTax).toLocaleString()}</td>
         <td>
-          <button onclick="createTonKhoItem('${taxCode}', '${type}')">➕</button>
-          <button onclick="startEditProduct('${taxCode}', '${type}', ${i})">✏️</button>
+          <button onclick="createTonKhoItem('${taxCode}', '${type}')">Thêm</button>
+          <button onclick="startEditProduct('${taxCode}', '${type}', ${i})">Sửa</button>
           ${quantity <= 0 ? `
             <button onclick="deleteStockItem('${taxCode}', '${type}', ${i})" 
                     style="background: #f44336; color: white; border: none; padding: 2px 6px; border-radius: 3px; cursor: pointer;">
-              🗑️
+              Xóa
             </button>
           ` : `
-            <button onclick="deleteTonKhoItem('${taxCode}', '${type}', ${i})">❌</button>
+            <button onclick="deleteTonKhoItem('${taxCode}', '${type}', ${i})">Xóa</button>
           `}
-          <button onclick="moveTonKhoItemPrompt('${taxCode}', '${type}', ${i})">🔁</button>
+          <button onclick="moveTonKhoItemPrompt('${taxCode}', '${type}', ${i})">Chuyển</button>
         </td>`;
     }
     html += `</tr>`;
@@ -209,7 +198,7 @@ function renderTonKhoTab(taxCode, type) {
 
   if (type === 'ck') {
     html += `<div style="margin-top:10px; font-weight:bold; color:#b00;">
-      💡 Tổng chiết khấu: ${total.toLocaleString()} đ
+      Tổng chiết khấu: ${total.toLocaleString()} đ
     </div>`;
   }
 
@@ -220,6 +209,14 @@ function renderTonKhoTab(taxCode, type) {
   if (totalSpan) totalSpan.innerText = total.toLocaleString() + ' đ';
 
   if (type === 'main' || type === 'ck') updateMainTotalDisplay(taxCode);
+
+  // GÁN ONCLICK CHỈ SAU KHI DOM ĐÃ CẬP NHẬT
+  setTimeout(() => {
+    const editButtons = container?.querySelectorAll('.btn-edit-stock');
+    editButtons?.forEach((btn, idx) => {
+      if (btn) btn.onclick = () => openEditStockPopup(taxCode, type, idx);
+    });
+  }, 50);
 }
 
 // Xóa tất cả tồn kho = 0 trong loại cụ thể
